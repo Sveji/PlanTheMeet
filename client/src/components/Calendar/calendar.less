@@ -1,0 +1,35 @@
+@import url('../../globalStyling/variables.less');
+
+.calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1.6rem;
+
+    .date {
+        @main: var(--blue);
+        @date: var(--blue-shade-8);
+        @border: var(--blue-shade-4);
+
+        // background-color: aqua;
+        // width: 12.8rem;
+        aspect-ratio: 1 / 1;
+        border-radius: 1rem;
+        overflow: hidden;
+        border: solid 0.1rem @border;
+        
+        .day-box {
+            background-color: @main;
+            position: relative;
+            height: 2.4rem;
+
+            .day {
+                position: absolute;
+                top: 50%;
+                right: 1.2rem;
+                font-size: 1.4rem;
+                transform: translateY(-50%);
+                color: @date;
+            }
+        }
+    }
+}
