@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './calendar.less'
 import Month from './components/Month'
+import EventCard from '../Events/EventCard'
 
 const Calendar = () => {
     // Holds the selected date
@@ -40,8 +41,20 @@ const Calendar = () => {
 
     return (
         <>
-            <h1>{month.name}</h1>
-            <Month month={month} year={year} />
+            <section className="calendar">
+                {
+                    Array.from({ length: 31 }, _ => null).map((date, index) => (
+                        <div className={`date ${index % 2 == 1 ? 'disabled' : null}`}>
+                            <div className="day-box">
+                                <p className="day">{index + 1}</p>
+                            </div>
+                        </div>
+                    ))
+                }
+            </section>
+            <section className='events'>
+                <EventCard />
+            </section>
         </>
     )
 }

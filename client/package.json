@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "axios": "^1.7.9",
-    "craco-less": "^3.0.1",
+    "craco-less": "^1.9.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.2.0"
