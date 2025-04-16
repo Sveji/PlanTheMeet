@@ -178,6 +178,9 @@ wss.on('connection', async (ws, req) => {
           case 'addEvent':
             await addEvent(ws, data);
             break;
+          case 'leaveEvent':
+            await leaveEvent(ws, data);
+            break;
           default:
             ws.send(JSON.stringify({ error: 'Invalid message type' }));
         }
@@ -395,44 +398,113 @@ async function addEvent(ws, data) {
   }
 };
 
-async function getEvent(ws, data) {
-  const { eventId } = data;
+async function leaveEvent(ws, data) {
+  const{ 
+    token,
+    eventId,
+  } = data;
+
+  var currentUser
   
+  try {
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if (err) throw new Error('Not valid sesion');
+      currentUser = user;
+    });
+
+    const event = await Event.findByPk(eventId);
+    if (!event) throw new Error('Event not found');
+
+    event.conformedUserIds = event.conformedUserIds.filter(id => id !== currentUser.id);
+    await event.save();
+
+    event.conformedUserIds.forEach(pid => {
+      const participantSocket = connectedClients.get(pid);
+      if (participantSocket) {
+        participantSocket.send(JSON.stringify({
+          message: `${currentUser.firstName} ${currentUser.familyName} left ${event.title}!`
+        }));
+      }
+    });
+
+    const hostSocket = connectedClients.get(event.userId);
+    if (hostSocket) {
+      hostSocket.send(JSON.stringify({
+        message: `${currentUser.firstName} ${currentUser.familyName} left your event: ${event.title}!`
+      }));
+    }
+
+    ws?.send?.(JSON.stringify({
+      message: `You successfuly left event: ${event.title}!`
+    }));
+
+  } catch (err) {
+    console.error('Error in leaveEvent:', err);
+    ws?.send?.(JSON.stringify({
+      type: 'error',
+      message: 'Internal server error',
+    }));
+  }
+};
+
+app.get('/events/getEvent', authenticateJWT, async (req, res) => {
+  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  const eventId = req.query.eventId;
+  try{
+    const event = await Event.findByPk(eventId);
+    if (!event) {
+      throw new Error('Event not found');
+    }
+
+    const host = await User.findByPk(event.userId, {
+      attributes: ['id', 'username', 'profilePicture'],
+    });
+
+    const confirmedUsers = await User.findAll({
+      where: {
+        id: event.conformedUserIds || [],
+      },
+      attributes: ['id', 'username', 'profilePicture'],
+    });
+
+    const pendingUsers = await User.findAll({
+      where: {
+        id: event.invitedUserIds?.filter(id => !(event.conformedUserIds || []).includes(id)) || [],
+      },
+      attributes: ['id', 'username', 'profilePicture'],
+    });
+
+    res.json({
+      title: event.title,
+      description: event.description,
+      dateTime: event.datetime,
+      location: event.location,
+      host: host,
+      participants: {
+        added: confirmedUsers,
+        pending: pendingUsers,
+      },
+    })
+  } catch (err) {
+    console.error('Error getting events:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+})
+
+app.post('/events/editEvent', authenticateJWT, async (req, res) => {
+  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  const {
+    eventId,
+    updatedData,
+  } = req.data
   const event = await Event.findByPk(eventId);
   if (!event) {
     throw new Error('Event not found');
   }
 
-  const host = await User.findByPk(event.userId, {
-    attributes: ['id', 'username', 'profilePicture'],
-  });
-
-  const confirmedUsers = await User.findAll({
-    where: {
-      id: event.conformedUserIds || [],
-    },
-    attributes: ['id', 'username', 'profilePicture'],
-  });
-
-  const pendingUsers = await User.findAll({
-    where: {
-      id: event.invitedUserIds?.filter(id => !(event.conformedUserIds || []).includes(id)) || [],
-    },
-    attributes: ['id', 'username', 'profilePicture'],
-  });
-
-  return {
-    title: event.title,
-    description: event.description,
-    dateTime: event.datetime,
-    location: event.location,
-    host: host,
-    participants: {
-      added: confirmedUsers,
-      pending: pendingUsers,
-    },
-  };
-}
+  await event.update(updatedData);
+  res.json(event);
+})
 
 app.get('/getFriends', authenticateJWT, async (req, res) => {
   res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
