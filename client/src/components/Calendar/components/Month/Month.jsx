@@ -59,7 +59,7 @@ const Month = ({ month = null, year = null }) => {
                         </div>
                     </div>
                     :
-                    <div></div>
+                    <div key={index}></div>
                 ))
             }
         </div>
