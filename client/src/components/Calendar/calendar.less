@@ -5,10 +5,43 @@
     --main: var(--blue);
     --date: var(--blue-shade-8);
     --border: var(--blue-shade-4);
+    --main-disabled: var(--blue-tint-7);
+    --date-disabled: var(--blue-shade-2);
+    --border-disabled: var(--blue-shade-2);
 
-    --wekend: var(--purple);
+    --weekend: var(--purple);
     --weekend-date: var(--purple-shade-5);
     --weekend-border: var(--purple-shade-4);
+    --weekend-disabled: var(--purple-tint-7);
+    --weekend-date-disabled: var(--purple-shade-2);
+    --weekend-border-disabled: var(--purple-shade-2);
+
+    &.spring {
+        --main: var(--green);
+        --date: var(--green-shade-6);
+        --border: var(--green-shade-4);
+        --main-disabled: var(--green-tint-7);
+        --date-disabled: var(--green-shade-1);
+        --border-disabled: var(--green-shade-1);
+
+        --weekend: var(--pink);
+        --weekend-date: var(--pink-shade-5);
+        --weekend-border: var(--pink-shade-4);
+        --weekend-disabled: var(--pink-tint-7);
+        --weekend-date-disabled: var(--pink-shade-2);
+        --weekend-border-disabled: var(--pink-shade-2);
+    }
+
+    &.summer {
+        --weekend: var(--green);
+        --weekend-date: var(--green-shade-6);
+        --weekend-border: var(--green-shade-4);
+        --weekend-disabled: var(--green-tint-7);
+        --weekend-date-disabled: var(--green-shade-1);
+        --weekend-border-disabled: var(--green-shade-1);
+    }
+
+    padding: 0 3.2rem;
 
     .label(@offset) {
         color: var(--main);
@@ -29,14 +62,38 @@
         display: flex;
         justify-content: space-between;
         align-items: end;
+        margin-bottom: 2.4rem;
     }
 
     .month-name {
         .label(0.2rem);
     }
 
-    .year {
-        .label(0.1rem);
+    .button-container {
+        display: flex;
+        align-items: center;
+        gap: 2.4rem;
+
+        .year {
+            .label(0.1rem);
+        }
+
+        .icon-container {
+            padding: 1rem 2rem;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: solid 0.2rem black;
+            border-radius: 1rem;
+            box-shadow: 0.4rem 0.4rem 0 black;
+            cursor: pointer;
+
+            .icon {
+                width: 2.4rem;
+                height: 2.4rem;
+            }
+        }
     }
 
     .month {
@@ -45,16 +102,32 @@
         gap: 1.6rem;
         background-color: white;
         border-radius: 3.2rem;
-        width: 128rem;
+        width: 100%;
         border: solid 0.2rem black;
         padding: 1.6rem;
         box-shadow: 0.7rem 0.7rem 0 black;
 
         .date {
+            cursor: pointer;
+
             &.weekend {
-                --main: var(--wekend);
+                --main: var(--weekend);
                 --date: var(--weekend-date);
                 --border: var(--weekend-border);
+            }
+
+            &.disabled {
+                --main: var(--main-disabled);
+                --date: var(--date-disabled);
+                --border: var(--border-disabled);
+
+                cursor: not-allowed;
+
+                &.weekend {
+                    --main: var(--weekend-disabled);
+                    --date: var(--weekend-date-disabled);
+                    --border: var(--weekend-border-disabled);
+                }
             }
 
             // background-color: aqua;
@@ -67,7 +140,7 @@
             .day-box {
                 background-color: var(--main);
                 position: relative;
-                height: 2.4rem;
+                height: 20%;
 
                 .day {
                     position: absolute;
