@@ -12,6 +12,7 @@ const { FriendRequest } = require('./models/friendRequest');
 require('./auth/google');
 const http = require('http');
 const { Server } = require('ws');
+const { Op } = require('sequelize');
 
 sequelize.authenticate()
   .then(() => console.log('Database connection established successfully'))
@@ -324,6 +325,43 @@ app.get('/getFriends', authenticateJWT, async (req, res) => {
   } catch (err) {
     console.error('Error fetching friends:', err);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.get('/events', authenticateJWT, async (req, res) => {
+  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  const date = req.query.date;
+  const userId  = req.user.id;
+
+  if (!date || !userId) {
+    return res.status(400).json({ error: 'Date and userId are required' });
+  }
+
+  try {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const events = await Event.findAll({
+      where: {
+        datetime: {
+          [Op.between]: [startOfDay, endOfDay],
+        },
+        [Op.or]: [
+          { userId: userId },
+          { invitedUserIds: { [Op.contains]: [parseInt(userId)] } },
+          { conformedUserIds: { [Op.contains]: [parseInt(userId)] } },
+        ],
+      },
+      order: [['datetime', 'ASC']],
+    });
+
+    res.json(events);
+  } catch (err) {
+    console.error('Error fetching events:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
