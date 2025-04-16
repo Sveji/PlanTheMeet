@@ -1,14 +1,22 @@
 @import url('../../globalStyling/variables.less');
 
-.calendar {
+.month {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 1.6rem;
+    background-color: white;
+    border-radius: 3.2rem;
+    width: 128rem;
+    border: solid 0.2rem black;
+    padding: 1.6rem;
+    box-shadow: 0.7rem 0.7rem 0 black;
 
     .date {
         @main: var(--blue);
         @date: var(--blue-shade-8);
         @border: var(--blue-shade-4);
+
+        // @weekend-main:
 
         // background-color: aqua;
         // width: 12.8rem;
