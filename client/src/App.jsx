@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import DataProvider from "./context/DataContext"
 import LayoutGrid from "./components/LayoutGrid/LayoutGrid"
-import Calendar from "./components/Calendar/Calendar"
+import MyCalendar from "./pages/MyCalendar/MyCalendar"
 
 function App() {
 
@@ -14,7 +14,7 @@ function App() {
 
         <Routes>
 
-          <Route path="/" element={<Calendar />} />
+          <Route path="/" element={<MyCalendar />} />
 
         </Routes>
 
