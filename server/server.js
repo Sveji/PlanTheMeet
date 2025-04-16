@@ -9,6 +9,7 @@ const passport = require('passport');
 const { sequelize } = require('./models/index');
 const { User } = require('./models/user');
 const { FriendRequest } = require('./models/friendRequest');
+const { Event } = require('./models/event');
 require('./auth/google');
 const http = require('http');
 const { Server } = require('ws');
