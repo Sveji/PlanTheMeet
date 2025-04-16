@@ -1,35 +1,88 @@
 @import url('../../globalStyling/variables.less');
 
+
 .calendar {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 1.6rem;
+    --main: var(--blue);
+    --date: var(--blue-shade-8);
+    --border: var(--blue-shade-4);
 
-    .date {
-        @main: var(--blue);
-        @date: var(--blue-shade-8);
-        @border: var(--blue-shade-4);
+    --wekend: var(--purple);
+    --weekend-date: var(--purple-shade-5);
+    --weekend-border: var(--purple-shade-4);
 
-        // background-color: aqua;
-        // width: 12.8rem;
-        aspect-ratio: 1 / 1;
-        border-radius: 1rem;
-        overflow: hidden;
-        border: solid 0.1rem @border;
-        
-        .day-box {
-            background-color: @main;
-            position: relative;
-            height: 2.4rem;
+    .label(@offset) {
+        color: var(--main);
+        --shadow: var(--weekend-border);
 
-            .day {
-                position: absolute;
-                top: 50%;
-                right: 1.2rem;
-                font-size: 1.4rem;
-                transform: translateY(-50%);
-                color: @date;
+        text-shadow: @offset 0 0 var(--shadow),
+        -@offset 0 0 var(--shadow),
+        0 @offset 0 var(--shadow),
+        0 -@offset 0 var(--shadow),
+        @offset @offset 0 var(--shadow),
+        -@offset -@offset 0 var(--shadow),
+        @offset -@offset 0 var(--shadow),
+        -@offset @offset 0 var(--shadow),
+        (@offset * 3) (@offset * 3) 0 var(--shadow);
+    }
+
+    .text-box {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+    }
+
+    .month-name {
+        .label(0.2rem);
+    }
+
+    .year {
+        .label(0.1rem);
+    }
+
+    .month {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1.6rem;
+        background-color: white;
+        border-radius: 3.2rem;
+        width: 128rem;
+        border: solid 0.2rem black;
+        padding: 1.6rem;
+        box-shadow: 0.7rem 0.7rem 0 black;
+
+        .date {
+            &.weekend {
+                --main: var(--wekend);
+                --date: var(--weekend-date);
+                --border: var(--weekend-border);
+            }
+
+            // background-color: aqua;
+            // width: 12.8rem;
+            aspect-ratio: 1 / 1;
+            border-radius: 1rem;
+            overflow: hidden;
+            border: solid 0.1rem var(--border);
+
+            .day-box {
+                background-color: var(--main);
+                position: relative;
+                height: 2.4rem;
+
+                .day {
+                    position: absolute;
+                    top: 50%;
+                    right: 1.2rem;
+                    font-size: 1.4rem;
+                    transform: translateY(-50%);
+                    color: var(--date);
+                }
             }
         }
     }
+}
+
+.evets {
+    background: #000;
+    padding: 2rem 0rem;
 }
