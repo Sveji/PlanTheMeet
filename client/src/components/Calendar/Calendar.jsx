@@ -41,17 +41,13 @@ const Calendar = () => {
 
     return (
         <>
-            <section className="calendar">
-                {
-                    Array.from({ length: 31 }, _ => null).map((date, index) => (
-                        <div className={`date ${index % 2 == 1 ? 'disabled' : null}`}>
-                            <div className="day-box">
-                                <p className="day">{index + 1}</p>
-                            </div>
-                        </div>
-                    ))
-                }
-            </section>
+            <div className="calendar">
+                <div className="text-box">
+                    <h1 className='month-name'>{month.name}</h1>
+                    <h3 className='year'>{year}</h3>
+                </div>
+                <Month month={month} year={year} />
+            </div>
             <section className='events'>
                 <EventCard />
             </section>

@@ -53,7 +53,7 @@ const Month = ({ month = null, year = null }) => {
                 !loading &&
                 dates.map((date, index) => (
                     date ?
-                    <div key={index} className={`date ${index % 2 == 1 ? 'disabled' : null} ${date.getDay() == 7 || date.getDay() == 6 ? 'weekend' : null}`}>
+                    <div key={index} className={`date ${index % 2 == 1 ? 'disabled' : null} ${date.getDay() == 0 || date.getDay() == 6 ? 'weekend' : null}`}>
                         <div className="day-box">
                             <p className="day">{date.getDate()}</p>
                         </div>
