@@ -9,9 +9,11 @@ const passport = require('passport');
 const { sequelize } = require('./models/index');
 const { User } = require('./models/user');
 const { FriendRequest } = require('./models/friendRequest');
+const { Event } = require('./models/event');
 require('./auth/google');
 const http = require('http');
 const { Server } = require('ws');
+const { Op } = require('sequelize');
 
 sequelize.authenticate()
   .then(() => console.log('Database connection established successfully'))
@@ -174,6 +176,12 @@ wss.on('connection', async (ws, req) => {
           case 'rejectFriend':
             await rejectFriendRequest(ws, data);
             break;
+          case 'addEvent':
+            await addEvent(ws, data);
+            break;
+          case 'leaveEvent':
+            await leaveEvent(ws, data);
+            break;
           default:
             ws.send(JSON.stringify({ error: 'Invalid message type' }));
         }
@@ -297,6 +305,208 @@ async function rejectFriendRequest(ws, data) {
   }
 }
 
+async function addEvent(ws, data) {
+  const{ 
+    title,
+    description,
+    date,
+    time,
+    location,
+    participants,
+    creatorId 
+  } = data;
+
+  try {
+    const creator = await User.findByPk(creatorId);
+    if (!creator) {
+      return ws?.send?.(JSON.stringify({ type: 'error', message: 'Creator not found' }));
+    }
+
+    const friendIds = creator.friends || [];
+    const notFriends = participants.filter(id => !friendIds.includes(id));
+    if (notFriends.length) {
+      return ws?.send?.(JSON.stringify({
+        type: 'error',
+        message: `These users are not your friends: ${notFriends.join(', ')}`
+      }));
+    }
+
+    const eventDatetime = new Date(`${date}T${time}`);
+    const eventsOnThatDay = await Event.findAll({
+      where: {
+        datetime: {
+          [Op.between]: [
+            new Date(`${date}T00:00:00`),
+            new Date(`${date}T23:59:59`)
+          ],
+        },
+        [Op.or]: [
+          { userId: { [Op.in]: participants } },
+          { conformedUserIds: { [Op.overlap]: participants } },
+        ],
+      },
+    });
+
+    const busyUsers = new Set();
+    for (const event of eventsOnThatDay) {
+      if (participants.includes(event.userId)) busyUsers.add(event.userId);
+      event.invitedUserIds?.forEach(id => {
+        if (participants.includes(id)) busyUsers.add(id);
+      });
+      event.conformedUserIds?.forEach(id => {
+        if (participants.includes(id)) busyUsers.add(id);
+      });
+    }
+
+    if (busyUsers.size > 0) {
+      return ws?.send?.(JSON.stringify({
+        type: 'error',
+        message: `These users are not available: ${[...busyUsers].join(', ')}`
+      }));
+    }
+
+    const newEvent = await Event.create({
+      title,
+      description,
+      datetime: eventDatetime,
+      location,
+      userId: creatorId,
+      invitedUserIds: participants,
+      conformedUserIds: [],
+    });
+
+    participants.forEach(pid => {
+      const participantSocket = connectedClients.get(pid);
+      if (participantSocket) {
+        participantSocket.send(JSON.stringify({
+          type: 'eventInvitation',
+          event: newEvent,
+        }));
+      }
+    });
+
+    ws?.send?.(JSON.stringify({
+      type: 'eventCreated',
+      event: newEvent,
+    }));
+
+  } catch (err) {
+    console.error('Error in handleAddEvent:', err);
+    ws?.send?.(JSON.stringify({
+      type: 'error',
+      message: 'Internal server error',
+    }));
+  }
+};
+
+async function leaveEvent(ws, data) {
+  const{ 
+    token,
+    eventId,
+  } = data;
+
+  var currentUser
+  
+  try {
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if (err) throw new Error('Not valid sesion');
+      currentUser = user;
+    });
+
+    const event = await Event.findByPk(eventId);
+    if (!event) throw new Error('Event not found');
+
+    event.conformedUserIds = event.conformedUserIds.filter(id => id !== currentUser.id);
+    await event.save();
+
+    event.conformedUserIds.forEach(pid => {
+      const participantSocket = connectedClients.get(pid);
+      if (participantSocket) {
+        participantSocket.send(JSON.stringify({
+          message: `${currentUser.firstName} ${currentUser.familyName} left ${event.title}!`
+        }));
+      }
+    });
+
+    const hostSocket = connectedClients.get(event.userId);
+    if (hostSocket) {
+      hostSocket.send(JSON.stringify({
+        message: `${currentUser.firstName} ${currentUser.familyName} left your event: ${event.title}!`
+      }));
+    }
+
+    ws?.send?.(JSON.stringify({
+      message: `You successfuly left event: ${event.title}!`
+    }));
+
+  } catch (err) {
+    console.error('Error in leaveEvent:', err);
+    ws?.send?.(JSON.stringify({
+      type: 'error',
+      message: 'Internal server error',
+    }));
+  }
+};
+
+app.get('/events/getEvent', authenticateJWT, async (req, res) => {
+  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  const eventId = req.query.eventId;
+  try{
+    const event = await Event.findByPk(eventId);
+    if (!event) {
+      throw new Error('Event not found');
+    }
+
+    const host = await User.findByPk(event.userId, {
+      attributes: ['id', 'username', 'profilePicture'],
+    });
+
+    const confirmedUsers = await User.findAll({
+      where: {
+        id: event.conformedUserIds || [],
+      },
+      attributes: ['id', 'username', 'profilePicture'],
+    });
+
+    const pendingUsers = await User.findAll({
+      where: {
+        id: event.invitedUserIds?.filter(id => !(event.conformedUserIds || []).includes(id)) || [],
+      },
+      attributes: ['id', 'username', 'profilePicture'],
+    });
+
+    res.json({
+      title: event.title,
+      description: event.description,
+      dateTime: event.datetime,
+      location: event.location,
+      host: host,
+      participants: {
+        added: confirmedUsers,
+        pending: pendingUsers,
+      },
+    })
+  } catch (err) {
+    console.error('Error getting events:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+})
+
+app.post('/events/editEvent', authenticateJWT, async (req, res) => {
+  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  const {
+    eventId,
+    updatedData,
+  } = req.data
+  const event = await Event.findByPk(eventId);
+  if (!event) {
+    throw new Error('Event not found');
+  }
+
+  await event.update(updatedData);
+  res.json(event);
+})
+
 app.get('/getFriends', authenticateJWT, async (req, res) => {
   res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
   const searchQuery = req.query.query?.toLowerCase() || '';
@@ -326,6 +536,59 @@ app.get('/getFriends', authenticateJWT, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+app.get('/events', authenticateJWT, async (req, res) => {
+  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  const date = req.query.date;
+  const userId  = req.user.id;
+
+  if (!date || !userId) {
+    return res.status(400).json({ error: 'Date and userId are required' });
+  }
+
+  try {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const events = await Event.findAll({
+      where: {
+        datetime: {
+          [Op.between]: [startOfDay, endOfDay],
+        },
+        [Op.or]: [
+          { userId: userId },
+          { invitedUserIds: { [Op.contains]: [parseInt(userId)] } },
+          { conformedUserIds: { [Op.contains]: [parseInt(userId)] } },
+        ],
+      },
+      order: [['datetime', 'ASC']],
+    });
+
+    res.json(events);
+  } catch (err) {
+    console.error('Error fetching events:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/events/getRecomendations', authenticateJWT, async (req, res) => {
+  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  const userId = req.user.id;
+  const {
+    date,
+    location,
+  } = req.body
+
+  try{
+    // Tuka she se sluchwa neshto
+  } catch (err) {
+    console.error('Error recomending events:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+})
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
