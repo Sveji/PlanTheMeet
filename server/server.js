@@ -175,6 +175,9 @@ wss.on('connection', async (ws, req) => {
           case 'rejectFriend':
             await rejectFriendRequest(ws, data);
             break;
+          case 'addEvent':
+            await addEvent(ws, data);
+            break;
           default:
             ws.send(JSON.stringify({ error: 'Invalid message type' }));
         }
@@ -298,6 +301,139 @@ async function rejectFriendRequest(ws, data) {
   }
 }
 
+async function addEvent(ws, data) {
+  const{ 
+    title,
+    description,
+    date,
+    time,
+    location,
+    participants,
+    creatorId 
+  } = data;
+
+  try {
+    const creator = await User.findByPk(creatorId);
+    if (!creator) {
+      return ws?.send?.(JSON.stringify({ type: 'error', message: 'Creator not found' }));
+    }
+
+    const friendIds = creator.friends || [];
+    const notFriends = participants.filter(id => !friendIds.includes(id));
+    if (notFriends.length) {
+      return ws?.send?.(JSON.stringify({
+        type: 'error',
+        message: `These users are not your friends: ${notFriends.join(', ')}`
+      }));
+    }
+
+    const eventDatetime = new Date(`${date}T${time}`);
+    const eventsOnThatDay = await Event.findAll({
+      where: {
+        datetime: {
+          [Op.between]: [
+            new Date(`${date}T00:00:00`),
+            new Date(`${date}T23:59:59`)
+          ],
+        },
+        [Op.or]: [
+          { userId: { [Op.in]: participants } },
+          { conformedUserIds: { [Op.overlap]: participants } },
+        ],
+      },
+    });
+
+    const busyUsers = new Set();
+    for (const event of eventsOnThatDay) {
+      if (participants.includes(event.userId)) busyUsers.add(event.userId);
+      event.invitedUserIds?.forEach(id => {
+        if (participants.includes(id)) busyUsers.add(id);
+      });
+      event.conformedUserIds?.forEach(id => {
+        if (participants.includes(id)) busyUsers.add(id);
+      });
+    }
+
+    if (busyUsers.size > 0) {
+      return ws?.send?.(JSON.stringify({
+        type: 'error',
+        message: `These users are not available: ${[...busyUsers].join(', ')}`
+      }));
+    }
+
+    const newEvent = await Event.create({
+      title,
+      description,
+      datetime: eventDatetime,
+      location,
+      userId: creatorId,
+      invitedUserIds: participants,
+      conformedUserIds: [],
+    });
+
+    participants.forEach(pid => {
+      const participantSocket = connectedClients.get(pid);
+      if (participantSocket) {
+        participantSocket.send(JSON.stringify({
+          type: 'eventInvitation',
+          event: newEvent,
+        }));
+      }
+    });
+
+    ws?.send?.(JSON.stringify({
+      type: 'eventCreated',
+      event: newEvent,
+    }));
+
+  } catch (err) {
+    console.error('Error in handleAddEvent:', err);
+    ws?.send?.(JSON.stringify({
+      type: 'error',
+      message: 'Internal server error',
+    }));
+  }
+};
+
+async function getEvent(ws, data) {
+  const { eventId } = data;
+  
+  const event = await Event.findByPk(eventId);
+  if (!event) {
+    throw new Error('Event not found');
+  }
+
+  const host = await User.findByPk(event.userId, {
+    attributes: ['id', 'username', 'profilePicture'],
+  });
+
+  const confirmedUsers = await User.findAll({
+    where: {
+      id: event.conformedUserIds || [],
+    },
+    attributes: ['id', 'username', 'profilePicture'],
+  });
+
+  const pendingUsers = await User.findAll({
+    where: {
+      id: event.invitedUserIds?.filter(id => !(event.conformedUserIds || []).includes(id)) || [],
+    },
+    attributes: ['id', 'username', 'profilePicture'],
+  });
+
+  return {
+    title: event.title,
+    description: event.description,
+    dateTime: event.datetime,
+    location: event.location,
+    host: host,
+    participants: {
+      added: confirmedUsers,
+      pending: pendingUsers,
+    },
+  };
+}
+
 app.get('/getFriends', authenticateJWT, async (req, res) => {
   res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
   const searchQuery = req.query.query?.toLowerCase() || '';
@@ -364,6 +500,22 @@ app.get('/events', authenticateJWT, async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+app.post('/events/getRecomendations', authenticateJWT, async (req, res) => {
+  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  const userId = req.user.id;
+  const {
+    date,
+    location,
+  } = req.body
+
+  try{
+    // Tuka she se sluchwa neshto
+  } catch (err) {
+    console.error('Error recomending events:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+})
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
