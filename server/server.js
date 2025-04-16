@@ -297,6 +297,36 @@ async function rejectFriendRequest(ws, data) {
   }
 }
 
+app.get('/getFriends', authenticateJWT, async (req, res) => {
+  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  const searchQuery = req.query.query?.toLowerCase() || '';
+
+  try {
+    const currentUser = await User.findByPk(req.user.id);
+
+    if (!currentUser || !Array.isArray(currentUser.friends)) {
+      return res.status(404).json({ message: 'User not found or has no friends :(' });
+    }
+
+    const friendIds = currentUser.friends;
+
+    const friends = await User.findAll({
+      where: {
+        id: friendIds,
+        ...(searchQuery && {
+          username: { [Op.iLike]: `%${searchQuery}%` },
+        }),
+      },
+      attributes: ['id', 'firstName', 'familyName', 'photo'],
+    });
+
+    res.json(friends);
+  } catch (err) {
+    console.error('Error fetching friends:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
