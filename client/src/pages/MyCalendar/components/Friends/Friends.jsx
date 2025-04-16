@@ -5,6 +5,20 @@ import Friend from "../../../../components/Friend/Friend";
 const Friends = () => {
     const [search, setSearch] = useState('')
 
+
+    // Gets friend color from index
+    const getColor = (index) => {
+        switch (index % 6) {
+            case 0: return 'pink'
+            case 1: return 'green'
+            case 2: return 'blue'
+            case 3: return 'purple'
+            case 4: return 'red'
+            case 5: return 'orange'
+        }
+    }
+
+
     return (
         <div className="friends-column">
             <div className="input-container">
@@ -19,9 +33,11 @@ const Friends = () => {
 
             <div className="friends-list">
                 {
-                    Array.from({ length: 18 }, _ => null).map(friend => (
+                    Array.from({ length: 18 }, _ => null).map((friend, i) => (
                         <Friend
-                            username='AlekPalek69bgXX'
+                            key={i}
+                            username='AlekPalek69bgXXAlekPalek69bgXXAlekPalek69bgXXAlekPalek69bgXXAlekPalek69bgXXAlekPalek69bgXX'
+                            color={getColor(i)}
                         />
                     ))
                 }
