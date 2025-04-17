@@ -25,12 +25,12 @@
             box-shadow: 0.6rem 0.6rem 0 black;
             padding: 1rem;
             margin-bottom: 3.2rem;
-            
+
             .icon {
                 width: 2.4rem;
                 height: 2.4rem;
             }
-    
+
             input {
                 font-family: inherit;
                 border: none;
@@ -48,11 +48,25 @@
             .friend {
                 --background: var(--pink);
 
-                &.green { --background: var(--green); }
-                &.blue { --background: var(--blue); }
-                &.purple { --background: var(--purple); }
-                &.red { --background: var(--red); }
-                &.orange { --background: var(--orange); }
+                &.green {
+                    --background: var(--green);
+                }
+
+                &.blue {
+                    --background: var(--blue);
+                }
+
+                &.purple {
+                    --background: var(--purple);
+                }
+
+                &.red {
+                    --background: var(--red);
+                }
+
+                &.orange {
+                    --background: var(--orange);
+                }
 
                 display: flex;
                 justify-content: space-between;
@@ -102,5 +116,21 @@
                 }
             }
         }
+    }
+}
+
+.events-section {
+    border-top: 0.2rem solid black;
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+    padding: 2rem 0;
+
+    .events-bar {
+        display: flex;
+        gap: 1rem;
+        padding: 2rem 0.5rem 2rem 0;
+        justify-content: center;
+        align-items: center;
     }
 }
