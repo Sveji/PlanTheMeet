@@ -27,8 +27,6 @@ sequelize.sync({ force: true })
 const options = {
     origin: ["http://localhost:3000"],
 }
-    
-
 
 const app = express();
 app.use(cors(options));
@@ -63,7 +61,7 @@ app.post('/auth/login', async (req, res) => {
         password
     } = req.body;
     try {
-      const user = await User.findOne({ where: { email } });
+      const user = await User.findAll({ where: { email } })[0];
       if (!user || !user.password) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
@@ -94,8 +92,8 @@ app.post('/auth/register', async (req, res) => {
         res.status(400).json({ error: "Passwords do not match" });
     }
     try {
-      const existing = await User.findOne({ where: { email } });
-      if (existing) return res.status(400).json({ message: 'Email already in use' });
+      const existing = await User.findAll({ where: { email } });
+      if (existing.length) return res.status(400).json({ message: 'Email already in use' });
   
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await User.create({ email, password: hashedPassword, firstName, familyName });
@@ -132,8 +130,8 @@ app.get('/auth/google/callback', (req, res, next) => {
 });
 
 app.get('/', (req, res) => {
-    res.send(`<h1>Welcome</h1><a href="/auth/google">Login with Google</a>`);
-  });
+  res.send(`<h1>Welcome</h1><a href="/auth/google">Login with Google</a>`);
+});
   
 ////////////////////////
 // Web socket server
@@ -736,6 +734,7 @@ app.post('/events/getRecomendations', authenticateJWT, async (req, res) => {
 app.get('/user', authenticateJWT, async (req, res) => {
   res.json(req.user)
 })
+
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
