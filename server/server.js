@@ -7,10 +7,10 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken')
 const passport = require('passport');
 const { sequelize } = require('./models/index');
-const { User } = require('./models/user');
-const { FriendRequest } = require('./models/friendRequest');
-const { Event } = require('./models/event');
-const { Notification } = require('./models/notification');
+const User = require('./models/user');
+const FriendRequest = require('./models/friendRequest');
+const Event = require('./models/event');
+const Notification = require('./models/notification');
 require('./auth/google');
 const http = require('http');
 const { Server } = require('ws');
@@ -61,7 +61,7 @@ app.post('/auth/login', async (req, res) => {
         password
     } = req.body;
     try {
-      const user = await User.findAll({ where: { email } })[0];
+      const user = await User.findOne({ where: { email } });
       if (!user || !user.password) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
@@ -92,8 +92,8 @@ app.post('/auth/register', async (req, res) => {
         res.status(400).json({ error: "Passwords do not match" });
     }
     try {
-      const existing = await User.findAll({ where: { email } });
-      if (existing.length) return res.status(400).json({ error: 'Email already in use' });
+      const existing = await User.findOne({ where: { email } });
+      if (existing) return res.status(400).json({ error: 'Email already in use' });
   
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await User.create({ email, password: hashedPassword, firstName, familyName });
