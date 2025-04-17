@@ -93,7 +93,7 @@ app.post('/auth/register', async (req, res) => {
     }
     try {
       const existing = await User.findAll({ where: { email } });
-      if (existing.length) return res.status(400).json({ message: 'Email already in use' });
+      if (existing.length) return res.status(400).json({ error: 'Email already in use' });
   
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await User.create({ email, password: hashedPassword, firstName, familyName });

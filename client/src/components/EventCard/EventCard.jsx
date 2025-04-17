@@ -1,22 +1,20 @@
 import './eventsCard.less';
 import IMG from '../../img/jake.jpg';
 
-const EventCard = () => {
+const EventCard = ({ color = 'orange', event, info = 'info', image = IMG, date = '27.04.2025' }) => {
     return (
-        <div className='card'>
-            <div className='heading'>
-                <h4>Sofia SUMMER fest</h4>
+        <div className={`card `}>
+            <div className={`heading ${color}`}>
+                <h4>{event}</h4>
             </div>
-            <img src={IMG} className='img' />
+            <img src={image} className='img' />
             <div className='description'>
                 <p className='text'>
-                    Lorem ipsum dolor sit amet consectetur. Cras erat sed eu in purus.
-                    Ultrices fringilla id risus rhoncus sit arcu egestas. Pretium libero leo odio id
-                    vulputate mauris. Mollis lacus...
+                    {info}
                 </p>
             </div>
             <div className='info'>
-                <div><h4>27.04.2025</h4></div>
+                <div><h4>{date}</h4></div>
 
                 <div className="button-duplicate"></div>
                 <div className='button'><h4>Add to calendar</h4></div>
