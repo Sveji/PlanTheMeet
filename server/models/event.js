@@ -28,6 +28,11 @@ const Event = sequelize.define('Event', {
     allowNull: true,
     defaultValue: [],
   },
+  notCommingUserIds: {
+    type: DataTypes.ARRAY(DataTypes.INTEGER),
+    allowNull: true,
+    defaultValue: [],
+  },
   description: {
     type: DataTypes.STRING,
     allowNull: true,

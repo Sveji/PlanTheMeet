@@ -1,4 +1,4 @@
-import './events.less';
+import './eventsCard.less';
 import IMG from '../../img/jake.jpg';
 
 const EventCard = () => {

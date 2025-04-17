@@ -10,6 +10,7 @@ const { sequelize } = require('./models/index');
 const { User } = require('./models/user');
 const { FriendRequest } = require('./models/friendRequest');
 const { Event } = require('./models/event');
+const { Notification } = require('./models/notification');
 require('./auth/google');
 const http = require('http');
 const { Server } = require('ws');
@@ -164,6 +165,16 @@ wss.on('connection', async (ws, req) => {
       ws.user = user;
       ws.send(JSON.stringify({ message: `Authenticated as ${user.email}` }));
 
+      if (user.id) {
+        const userId = user.id
+        const notifications = await Notification.findAll({ where: { userId } });
+    
+        ws.send(JSON.stringify({
+          type: 'notifications',
+          notifications,
+        }));
+      }
+
       ws.on('message', async (message) => {
         const data = JSON.parse(message);
         switch (data.type) {
@@ -181,6 +192,15 @@ wss.on('connection', async (ws, req) => {
             break;
           case 'leaveEvent':
             await leaveEvent(ws, data);
+            break;
+          case 'acceptEventInvite':
+            await acceptEventInvite(ws, data);
+            break;
+          case 'rejectEventInvite':
+            await rejectEventInvite(ws, data);
+            break;
+          case 'markAsRead':
+            await markAsRead(ws, data);
             break;
           default:
             ws.send(JSON.stringify({ error: 'Invalid message type' }));
@@ -448,6 +468,129 @@ async function leaveEvent(ws, data) {
   }
 };
 
+async function acceptEventInvite(ws, data) {
+  const {
+    token,
+    eventId,
+  } = data
+
+  var currentUser
+  
+  try{
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if (err) throw new Error('Not valid sesion');
+      currentUser = user;
+    });
+
+    const event = await Event.findByPk(eventId);
+    if (!event) throw new Error('Event not found');
+
+    if(!event.invitedUserIds.includes(currentUser.id)){
+      throw new Error('You are not invited to this event');
+    }
+
+    if (!event.conformedUserIds.includes(currentUser.id)) {
+      event.conformedUserIds.push(currentUser.id);
+    }
+
+    await event.save();
+
+    const participantIds = [...event.invitedUserIds].filter(id => id !== currentUser.id);
+    participantIds.forEach(pid => {
+      const participantSocket = connectedClients.get(pid);
+      if (participantSocket) {
+        participantSocket.send(JSON.stringify({
+          message: `${currentUser.firstName} ${currentUser.familyName} will come to: ${event.title}!`
+        }));
+      }
+    });
+
+    ws?.send?.(JSON.stringify({
+      message: `You successfuly accepted the invite for: ${event.title}!`
+    }));
+  } catch (err) {
+    console.error('Error accepting event invite:', err);
+    ws?.send?.(JSON.stringify({
+      type: 'error',
+      message: 'Internal server error',
+    }));
+  }
+  
+}
+
+async function rejectEventInvite(ws, data) {
+  const {
+    token,
+    eventId,
+  } = data
+
+  var currentUser
+  
+  try{
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if (err) throw new Error('Not valid sesion');
+      currentUser = user;
+    });
+
+    const event = await Event.findByPk(eventId);
+    if (!event) throw new Error('Event not found');
+
+    if(!event.invitedUserIds.includes(currentUser.id)){
+      throw new Error('You are not invited to this event');
+    }
+
+    if (!event.notCommingUserIds.includes(currentUser.id)) {
+      event.notCommingUserIds.push(currentUser.id);
+    }
+
+    await event.save();
+
+    const participantIds = [...event.invitedUserIds].filter(id => id !== currentUser.id);
+    participantIds.forEach(pid => {
+      const participantSocket = connectedClients.get(pid);
+      if (participantSocket) {
+        participantSocket.send(JSON.stringify({
+          message: `${currentUser.firstName} ${currentUser.familyName} won't be able to come to: ${event.title}!`
+        }));
+      }
+    });
+
+    ws?.send?.(JSON.stringify({
+      message: `You successfuly rejected the invite for: ${event.title}!`
+    }));
+  } catch (err) {
+    console.error('Error accepting event invite:', err);
+    ws?.send?.(JSON.stringify({
+      type: 'error',
+      message: 'Internal server error',
+    }));
+  }
+  
+}
+
+async function markAsRead(ws, data) {
+  const { token, notificationId } = data;
+
+  try{
+    var currentUser
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if (err) throw new Error('Not valid sesion');
+      currentUser = user;
+    });
+    
+    if (type === 'markAsRead' && notificationId) {
+      await Notification.destroy({ where: { id: notificationId } });
+      ws.send(JSON.stringify({ type: 'notificationRemoved', notificationId }));
+    }
+  }catch (err) {
+    console.error('Error deletng notification:', err);
+    ws?.send?.(JSON.stringify({
+      type: 'error',
+      message: 'Internal server error',
+    }));
+  }
+}
+
 app.get('/events/getEvent', authenticateJWT, async (req, res) => {
   res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
   const eventId = req.query.eventId;
@@ -590,6 +733,9 @@ app.post('/events/getRecomendations', authenticateJWT, async (req, res) => {
   }
 })
 
+app.get('/user', authenticateJWT, async (req, res) => {
+  res.json(req.user)
+})
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
