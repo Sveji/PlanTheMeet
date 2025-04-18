@@ -6,6 +6,8 @@
     grid-template-columns: 75fr 25fr;
     gap: 3.2rem;
     align-items: start;
+    min-width: 0;
+    min-height: 0;
 
     .friends-column {
         // overflow-y: auto;
@@ -13,6 +15,7 @@
         padding-top: 15rem;
         // width: 100%;
         // background-color: aqua;
+        min-width: 0;
 
         .input-container {
             width: 100%;
@@ -47,44 +50,38 @@
 
             .friend {
                 --background: var(--pink);
-
-                &.green {
-                    --background: var(--green);
-                }
-
-                &.blue {
-                    --background: var(--blue);
-                }
-
-                &.purple {
-                    --background: var(--purple);
-                }
-
-                &.red {
-                    --background: var(--red);
-                }
-
-                &.orange {
-                    --background: var(--orange);
-                }
+                &.green { --background: var(--green); }
+                &.blue { --background: var(--blue); }
+                &.purple { --background: var(--purple); }
+                &.red { --background: var(--red); }
+                &.orange { --background: var(--orange); }
 
                 display: flex;
                 justify-content: space-between;
+                gap: 1.6rem;
+                // display: grid;
+                // grid-template-columns: 1fr 1fr;
                 align-items: center;
                 background-color: var(--background);
                 padding: 1.6rem;
                 border-radius: 1.2rem;
                 border: solid 0.2rem black;
                 box-shadow: 0.4rem 0.4rem 0 black;
-                // width: 100%;
+                width: 100%;
+                // overflow: hidden;
 
                 .user-info {
                     display: flex;
                     align-items: center;
                     gap: 1.6rem;
                     width: 100%;
+                    // flex-shrink: 1;
+                    // background-color: aqua;
+                    min-width: 0;
 
                     .username {
+                        white-space: nowrap;
+                        overflow: hidden;
                         text-overflow: ellipsis;
                     }
 
