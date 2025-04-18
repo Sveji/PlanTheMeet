@@ -1,5 +1,5 @@
 import axios from "axios";
-import { createContext, useState } from "react";
+import { createContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export const DataContext = createContext({ })
@@ -50,6 +50,37 @@ const DataProvider = ({ children }) => {
 
     // Holds whether the layout grid is shown or not
     const [grid, setGrid] = useState(false)
+
+
+
+    // Establishes a web socket connection on init
+    const socketRef = useRef(null)
+
+    useEffect(() => {
+        if(access) {
+            socketRef.current = new WebSocket('ws://localhost:5000/')
+
+            socketRef.current.onopen = () => {
+                console.log("Web Socket Connection Established")
+            }
+
+            socketRef.current.onmessage = () => {
+                console.log('Message')
+            }
+
+            socketRef.onerror = () => {
+                console.log('Error')
+            }
+
+            socketRef.current.onclose = () => {
+                console.log("Web Socket Connection Closed")
+            }
+
+            return () => {
+                socketRef.current.close()
+            }
+        }
+    }, [access])
 
 
 
