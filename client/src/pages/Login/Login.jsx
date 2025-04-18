@@ -1,10 +1,17 @@
-import { useContext, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import { DataContext } from "../../context/DataContext"
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google"
 
 const Login = () => {
     // Gets global data from the context
-    const { crud } = useContext(DataContext)
+    const { crud, access, setAccess, navigate } = useContext(DataContext)
+
+
+
+    // Redirects user if they are already logged in
+    useEffect(() => {
+       if(access) navigate('/')
+    }, [access])
 
 
 
@@ -30,8 +37,26 @@ const Login = () => {
 
         console.log(response)
 
+        if(response.status == 200) {
+            localStorage.setItem('access', response.data.token)
+            setAccess(response.data.token)
+            navigate('/')
+        }
+
         if(response.status == 401) setError(response.response.data.message)
         if(response.status == 500) setError(response.response.data.error)
+    }
+
+
+
+    // Sends a google login request to the backend
+    const handleGoogleLoginSuccess = async (credentials) => {
+        const token = credentials.credential
+        console.log(token)
+    }
+
+    const handleGoogleLoginFailure = async () => {
+        console.log('Error')
     }
 
 
@@ -57,12 +82,12 @@ const Login = () => {
             />
             <button type="submit">Login</button>
 
-                {/* <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH2}>
+                <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH2}>
                     <GoogleLogin
                         onSuccess={handleGoogleLoginSuccess}
                         onError={handleGoogleLoginFailure}
                     />
-                </GoogleOAuthProvider> */}
+                </GoogleOAuthProvider>
         </form>
     )
 }
