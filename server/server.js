@@ -16,6 +16,8 @@ const http = require('http');
 const { Server } = require('ws');
 const { Op } = require('sequelize');
 
+const alllowedCORS = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003']
+
 sequelize.authenticate()
   .then(() => console.log('Database connection established successfully'))
   .catch(err => console.error('Unable to connect to the database:', err));
@@ -55,7 +57,7 @@ function authenticateJWT(req, res, next) {
 }
 
 app.post('/auth/login', async (req, res) => {
-    res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+    res.set('Access-Control-Allow-Origin', alllowedCORS)
     const {
         email,
         password
@@ -79,7 +81,7 @@ app.post('/auth/login', async (req, res) => {
 });
 
 app.post('/auth/register', async (req, res) => {
-    res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+    res.set('Access-Control-Allow-Origin', alllowedCORS)
     const {
         email,
         firstName,
@@ -634,7 +636,7 @@ app.get('/events/getEvent', authenticateJWT, async (req, res) => {
 })
 
 app.post('/events/editEvent', authenticateJWT, async (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  res.set('Access-Control-Allow-Origin', alllowedCORS)
   const {
     eventId,
     updatedData,
@@ -649,7 +651,7 @@ app.post('/events/editEvent', authenticateJWT, async (req, res) => {
 })
 
 app.get('/getFriends', authenticateJWT, async (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  res.set('Access-Control-Allow-Origin', alllowedCORS)
   const searchQuery = req.query.query?.toLowerCase() || '';
 
   try {
@@ -679,7 +681,7 @@ app.get('/getFriends', authenticateJWT, async (req, res) => {
 });
 
 app.get('/events', authenticateJWT, async (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  res.set('Access-Control-Allow-Origin', alllowedCORS)
   const date = req.query.date;
   const userId  = req.user.id;
 
@@ -716,7 +718,7 @@ app.get('/events', authenticateJWT, async (req, res) => {
 });
 
 app.post('/events/getRecomendations', authenticateJWT, async (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  res.set('Access-Control-Allow-Origin', alllowedCORS)
   const userId = req.user.id;
   const {
     date,
