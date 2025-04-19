@@ -16,20 +16,29 @@ const http = require('http');
 const { Server } = require('ws');
 const { Op } = require('sequelize');
 
+const alllowedCORS = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003']
+
 sequelize.authenticate()
   .then(() => console.log('Database connection established successfully'))
   .catch(err => console.error('Unable to connect to the database:', err));
 
-sequelize.sync({ force: true })
+sequelize.sync({ alter: true })
   .then(() => console.log('Database synced'))
   .catch(err => console.error('Sync error:', err));
 
-const options = {
-    origin: ["http://localhost:3000"],
-}
-
 const app = express();
-app.use(cors(options));
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || alllowedCORS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 const server = http.createServer(app);
 const wss = new Server({ server });
@@ -55,7 +64,7 @@ function authenticateJWT(req, res, next) {
 }
 
 app.post('/auth/login', async (req, res) => {
-    res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+    
     const {
         email,
         password
@@ -79,7 +88,7 @@ app.post('/auth/login', async (req, res) => {
 });
 
 app.post('/auth/register', async (req, res) => {
-    res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+    
     const {
         email,
         firstName,
@@ -634,7 +643,7 @@ app.get('/events/getEvent', authenticateJWT, async (req, res) => {
 })
 
 app.post('/events/editEvent', authenticateJWT, async (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  
   const {
     eventId,
     updatedData,
@@ -649,7 +658,7 @@ app.post('/events/editEvent', authenticateJWT, async (req, res) => {
 })
 
 app.get('/getFriends', authenticateJWT, async (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  
   const searchQuery = req.query.query?.toLowerCase() || '';
 
   try {
@@ -679,7 +688,7 @@ app.get('/getFriends', authenticateJWT, async (req, res) => {
 });
 
 app.get('/events', authenticateJWT, async (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  
   const date = req.query.date;
   const userId  = req.user.id;
 
@@ -716,7 +725,7 @@ app.get('/events', authenticateJWT, async (req, res) => {
 });
 
 app.post('/events/getRecomendations', authenticateJWT, async (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
+  
   const userId = req.user.id;
   const {
     date,
@@ -735,6 +744,10 @@ app.get('/user', authenticateJWT, async (req, res) => {
   res.json(req.user)
 })
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+// app.listen(PORT, () => {
+//     console.log(`Server is running on http://localhost:${PORT}`);
+// });
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

@@ -72,10 +72,18 @@ const DataProvider = ({ children }) => {
 
             socketRef.current.onopen = () => {
                 console.log("Web Socket Connection Established")
+
+                socketRef.current.send(JSON.stringify({
+                    token: access
+                }))
             }
 
-            socketRef.current.onmessage = () => {
-                console.log('Message')
+            socketRef.current.onmessage = (data) => {
+                console.log(data)
+
+                if(data.type === 'message') {
+                    console.log(JSON.parse(data.data))
+                }
             }
 
             socketRef.onerror = () => {
