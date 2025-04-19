@@ -68,7 +68,7 @@ const DataProvider = ({ children }) => {
 
     useEffect(() => {
         if(access) {
-            socketRef.current = new WebSocket('ws://localhost:5000/')
+            socketRef.current = new WebSocket('wss://localhost:5000/')
 
             socketRef.current.onopen = () => {
                 console.log("Web Socket Connection Established")
