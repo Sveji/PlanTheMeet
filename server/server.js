@@ -57,7 +57,7 @@ function authenticateJWT(req, res, next) {
 }
 
 app.post('/auth/login', async (req, res) => {
-    res.set('Access-Control-Allow-Origin', alllowedCORS)
+    res.set('Access-Control-Allow-Origin', [...alllowedCORS])
     const {
         email,
         password
@@ -81,7 +81,7 @@ app.post('/auth/login', async (req, res) => {
 });
 
 app.post('/auth/register', async (req, res) => {
-    res.set('Access-Control-Allow-Origin', alllowedCORS)
+    res.set('Access-Control-Allow-Origin', [...alllowedCORS])
     const {
         email,
         firstName,
@@ -636,7 +636,7 @@ app.get('/events/getEvent', authenticateJWT, async (req, res) => {
 })
 
 app.post('/events/editEvent', authenticateJWT, async (req, res) => {
-  res.set('Access-Control-Allow-Origin', alllowedCORS)
+  res.set('Access-Control-Allow-Origin', [...alllowedCORS])
   const {
     eventId,
     updatedData,
@@ -651,7 +651,7 @@ app.post('/events/editEvent', authenticateJWT, async (req, res) => {
 })
 
 app.get('/getFriends', authenticateJWT, async (req, res) => {
-  res.set('Access-Control-Allow-Origin', alllowedCORS)
+  res.set('Access-Control-Allow-Origin', [...alllowedCORS])
   const searchQuery = req.query.query?.toLowerCase() || '';
 
   try {
@@ -681,7 +681,7 @@ app.get('/getFriends', authenticateJWT, async (req, res) => {
 });
 
 app.get('/events', authenticateJWT, async (req, res) => {
-  res.set('Access-Control-Allow-Origin', alllowedCORS)
+  res.set('Access-Control-Allow-Origin', [...alllowedCORS])
   const date = req.query.date;
   const userId  = req.user.id;
 
@@ -718,7 +718,7 @@ app.get('/events', authenticateJWT, async (req, res) => {
 });
 
 app.post('/events/getRecomendations', authenticateJWT, async (req, res) => {
-  res.set('Access-Control-Allow-Origin', alllowedCORS)
+  res.set('Access-Control-Allow-Origin', [...alllowedCORS])
   const userId = req.user.id;
   const {
     date,

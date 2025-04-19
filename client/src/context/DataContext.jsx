@@ -68,14 +68,22 @@ const DataProvider = ({ children }) => {
 
     useEffect(() => {
         if(access) {
-            socketRef.current = new WebSocket('wss://localhost:5000/')
+            socketRef.current = new WebSocket('ws://localhost:5000/')
 
             socketRef.current.onopen = () => {
                 console.log("Web Socket Connection Established")
+
+                socketRef.current.send(JSON.stringify({
+                    token: access
+                }))
             }
 
-            socketRef.current.onmessage = () => {
-                console.log('Message')
+            socketRef.current.onmessage = (data) => {
+                console.log(data)
+
+                if(data.type === 'message') {
+                    console.log(JSON.parse(data.data))
+                }
             }
 
             socketRef.onerror = () => {
