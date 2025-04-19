@@ -26,12 +26,19 @@ sequelize.sync({ alter: true })
   .then(() => console.log('Database synced'))
   .catch(err => console.error('Sync error:', err));
 
-const options = {
-    origin: ["http://localhost:3000", 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003'],
-}
-
 const app = express();
-app.use(cors(options));
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || alllowedCORS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 const server = http.createServer(app);
 const wss = new Server({ server });
