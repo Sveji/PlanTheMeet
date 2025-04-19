@@ -735,6 +735,10 @@ app.get('/user', authenticateJWT, async (req, res) => {
   res.json(req.user)
 })
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+// app.listen(PORT, () => {
+//     console.log(`Server is running on http://localhost:${PORT}`);
+// });
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
