@@ -53,6 +53,16 @@ const DataProvider = ({ children }) => {
 
 
 
+    // Checks which season the given month is in
+    const getSeason = (month) => {
+        if(month >= 2 && month <= 4) return 'spring'
+        if(month >= 5 && month <= 7) return 'summer'
+        if(month >= 8 && month <= 10) return 'autumn'
+        if(month == 11 || month == 0 || month.index == 1) return 'winter'
+    }
+
+
+
     // Establishes a web socket connection on init
     const socketRef = useRef(null)
 
@@ -88,7 +98,8 @@ const DataProvider = ({ children }) => {
         <DataContext.Provider value={{
             navigate,
             crud, access, setAccess, refresh, setRefresh,
-            grid, setGrid
+            grid, setGrid,
+            getSeason
         }}>
             { children }
         </DataContext.Provider>

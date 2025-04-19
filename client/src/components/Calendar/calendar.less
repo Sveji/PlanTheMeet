@@ -130,6 +130,11 @@
 
         .date {
             cursor: pointer;
+            transition: 0.2s;
+
+            &:hover {
+                transform: scale(1.05);
+            }
 
             &.weekend {
                 --main: var(--weekend);
@@ -148,6 +153,20 @@
                     --main: var(--weekend-disabled);
                     --date: var(--weekend-date-disabled);
                     --border: var(--weekend-border-disabled);
+                }
+            }
+
+            &.today {
+                .day-box {
+                    .day {
+                        background-color: var(--date);
+                        color: var(--main);
+                        border-radius: 100%;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        padding: 0.2rem 0.4rem;
+                    }
                 }
             }
 

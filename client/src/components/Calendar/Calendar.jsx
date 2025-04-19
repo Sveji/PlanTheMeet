@@ -1,12 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import './calendar.less'
 import Month from './components/Month/Month'
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa6";
 import TextBox from './components/TextBox/TextBox';
+import { DataContext } from '../../context/DataContext';
 
 const Calendar = () => {
+    // Gets global data from the context
+    const { getSeason } = useContext(DataContext)
+
+
+
     // Holds the selected date
-    const [selected, setSelected] = useState(new Date())
+    const [selected, setSelected] = useState(null)
 
 
 
@@ -28,25 +34,23 @@ const Calendar = () => {
 
 
 
-    // Sets the values to the selected date on init
+    // Sets the values to the current date on init
     useEffect(() => {
-        if(selected) {
-            setMonth({
-                index: selected.getMonth(),
-                name: getMonthName(selected.getMonth())
-            })
-            setYear(selected.getFullYear())
-        }
-    }, [selected])
+        const today = new Date()
+
+        setMonth({
+            index: today.getMonth(),
+            name: getMonthName(today.getMonth())
+        })
+        setYear(today.getFullYear())
+    }, [])
 
 
 
     // Changes the season state when the month changes
     useEffect(() => {
-        if(month.index >= 2 && month.index <= 4) setSeason('spring')
-        if(month.index >= 5 && month.index <= 7) setSeason('summer')
-        if(month.index >= 8 && month.index <= 10) setSeason('autumn')
-        if(month.index == 11 || month.index == 0 || month.index == 1) setSeason('winter')
+        const currSeason = getSeason(month.index)
+        setSeason(currSeason)
     }, [month])
 
 
