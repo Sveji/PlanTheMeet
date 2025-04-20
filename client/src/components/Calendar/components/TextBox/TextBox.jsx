@@ -1,4 +1,5 @@
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa6"
+import DuplicateBox from "../../../DuplicateBox/DuplicateBox"
 
 const TextBox = ({ month, setMonth, year, setYear, getMonthName }) => {
     // Changes the month and year states
@@ -37,8 +38,8 @@ const TextBox = ({ month, setMonth, year, setYear, getMonthName }) => {
             <h1 className='month-name'>{month.name}</h1>
             <div className="button-container">
                 <h3 className='year'>{year}</h3>
-                <div className="icon-container" onClick={() => handleMonthChange('-')}><FaArrowLeft className='icon' /></div>
-                <div className="icon-container" onClick={() => handleMonthChange('+')}><FaArrowRight className='icon' /></div>
+                <DuplicateBox><div className="icon-container" onClick={() => handleMonthChange('-')}><FaArrowLeft className='icon' /></div></DuplicateBox>
+                <DuplicateBox><div className="icon-container" onClick={() => handleMonthChange('+')}><FaArrowRight className='icon' /></div></DuplicateBox>
             </div>
         </div>
     )

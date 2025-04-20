@@ -1,9 +1,40 @@
+import { NavLink } from "react-router-dom"
+import DuplicateBox from "../DuplicateBox/DuplicateBox"
+
 const Nav = () => {
+    // Holds the links for the navbar
+    const links = [
+        {
+            url: '/',
+            label: 'Calendar'
+        },
+        {
+            url: '/chat',
+            label: 'Chats'
+        },
+        {
+            url: '/friends',
+            label: 'Friends'
+        },
+        {
+            url: '/',
+            label: 'Notifications'
+        },
+    ]
+
+
+
     return (
-        <header>
-            <nav>
-                
-            </nav>
+        <header className="header">
+            <DuplicateBox>
+                <nav className="navbar">
+                    {
+                        links.map(link => (
+                            <NavLink className={({isActive}) => `nav-link ${isActive && 'active'}`} to={link.url}>{link.label}</NavLink>
+                        ))
+                    }
+                </nav>
+            </DuplicateBox>
         </header>
     )
 }

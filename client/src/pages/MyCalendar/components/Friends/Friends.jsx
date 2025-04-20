@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { HiOutlineSearch } from "react-icons/hi";
 import Friend from "../../../../components/Friend/Friend";
+import DuplicateBox from "../../../../components/DuplicateBox/DuplicateBox";
 
 const Friends = () => {
     const [search, setSearch] = useState('')
@@ -21,15 +22,17 @@ const Friends = () => {
 
     return (
         <div className="friends-column">
-            <div className="input-container">
-                <HiOutlineSearch className="icon"/>
-                <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search friend"
-                />
-            </div>
+            <DuplicateBox>
+                <div className="input-container">
+                    <HiOutlineSearch className="icon"/>
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search friend"
+                    />
+                </div>
+            </DuplicateBox>
 
             <div className="friends-list">
                 {
