@@ -19,7 +19,6 @@ const MyCalendar = () => {
 
     useEffect(() => {
         if(leftRef.current && dayRef.current) {
-            console.log(dayRef)
             dayRef.current.style.height = `${leftRef.current.offsetHeight}px`
         }
     }, [leftRef.current, dayRef.current])

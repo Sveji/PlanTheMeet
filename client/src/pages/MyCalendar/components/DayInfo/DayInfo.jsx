@@ -7,7 +7,7 @@ import DuplicateBox from "../../../../components/DuplicateBox/DuplicateBox";
 const DayInfo = ({ ref, selected, setSelected }) => {
     // Formats a date object
     const formatDate = (date) => {
-        return `${date.getDate() < 10 ? `0${date.getDate()}` : date.getDate()}.${date.getMonth() + 1 < 10 ? `0${date.getMonth() + 1}` : date.getMont() + 1}.${date.getFullYear()}`
+        return `${date.getDate() < 10 ? `0${date.getDate()}` : date.getDate()}.${date.getMonth() + 1 < 10 ? `0${date.getMonth() + 1}` : date.getMonth() + 1}.${date.getFullYear()}`
     }
 
 
