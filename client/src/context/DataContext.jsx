@@ -63,6 +63,11 @@ const DataProvider = ({ children }) => {
 
 
 
+    // Holds the user's notifications
+    const [notifications, setNotifications] = useState([])
+
+
+
     // Establishes a web socket connection on init
     const socketRef = useRef(null)
 
@@ -82,7 +87,23 @@ const DataProvider = ({ children }) => {
                 console.log(data)
 
                 if(data.type === 'message') {
-                    console.log(JSON.parse(data.data))
+                    const parsedData = JSON.parse(data.data)
+                    console.log(parsedData)
+                    if(parsedData.type === "notifications") {
+                        setNotifications(parsedData.notifications)
+                    }
+                    if(parsedData.type === "notification") {
+                        const newNotifications = [
+                            parsedData.message,
+                            ...notifications
+                        ]
+                        console.log(newNotifications)
+                        setNotifications(newNotifications)
+                    }
+                    if(parsedData.type === "notificationRemoved") {
+                        const newNotifications = notifications.filter(notification => notification.id !== parsedData.notificationId)
+                        setNotifications(newNotifications)
+                    }
                 }
             }
 
@@ -134,7 +155,8 @@ const DataProvider = ({ children }) => {
             grid, setGrid,
             socketRef,
             getSeason,
-            getFriendColor
+            getFriendColor,
+            notifications
         }}>
             { children }
         </DataContext.Provider>

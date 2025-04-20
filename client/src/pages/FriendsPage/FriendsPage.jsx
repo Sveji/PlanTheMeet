@@ -1,9 +1,10 @@
 import { useContext, useEffect, useState } from "react"
 import { DataContext } from "../../context/DataContext"
+import Notifications from "./Notifications"
 
 const FriendsPage = () => {
     // Gets global data from the context
-    const { crud, socketSend } = useContext(DataContext)
+    const { crud, access, socketRef, socketSend } = useContext(DataContext)
 
 
 
@@ -47,20 +48,20 @@ const FriendsPage = () => {
 
     // Accepts a friend request through the web socket server
     const handleAcceptFriend = (requestId) => {
-        socketSend(JSON.stringify({
+        socketSend({
             type: 'acceptFriend',
             requestId
-        }))
+        })
     }
 
 
 
     // Rejects a friend request through the web socket server
     const handleRejectFriend = (requestId) => {
-        socketSend(JSON.stringify({
+        socketSend({
             type: 'rejectFriend',
             requestId
-        }))
+        })
     }
 
 
@@ -85,8 +86,10 @@ const FriendsPage = () => {
                 <button type="submit">Add friend</button>
             </form>
 
-            <button onClick={() => handleAcceptFriend(7)}>Accept Marti</button>
-            <button onClick={() => handleRejectFriend(7)}>Reject Marti</button>
+            <button onClick={() => handleAcceptFriend(14)}>Accept Marti</button>
+            <button onClick={() => handleRejectFriend(14)}>Reject Marti</button>
+
+            <Notifications />
         </>
     )
 }
