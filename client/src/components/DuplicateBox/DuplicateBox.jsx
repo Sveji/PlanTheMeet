@@ -1,9 +1,9 @@
-const DuplicateBox = ({ children }) => {
+const DuplicateBox = ({ children, className = '' }) => {
     return (
-        <div className="duplicate-box">
+        <div className={`duplicate-box ${className}`}>
             { children }
 
-            <div className="clone">
+            <div className={`clone ${className}`}>
                 { children }
             </div>
         </div>
