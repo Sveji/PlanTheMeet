@@ -286,6 +286,13 @@ async function addFriendRequest(ws, data) {
       status: 'pending',
     });
 
+    await Notification.create({
+      userId: recipient.id,
+      senderId: ws.user.id,
+      type: 'friendRequest',
+      message: `${ws.user.firstName} ${ws.user.familyName} sent you a friend request!`,
+    });
+
     wss.clients.forEach(client => {
       if (client.readyState === ws.OPEN && client.user && client.user.id === recipient.id) {
         client.send(JSON.stringify({
@@ -307,7 +314,7 @@ async function acceptFriendRequest(ws, data) {
   try {
     const { requestId } = data;
     const request = await FriendRequest.findByPk(requestId);
-
+    console.log(request)
     if (!request || request.recipientId !== ws.user.id || request.status !== 'pending') {
       return ws.send(JSON.stringify({ error: 'Invalid or expired request' }));
     }
@@ -321,6 +328,21 @@ async function acceptFriendRequest(ws, data) {
     
     await requester.save();
     await ws.user.save();
+
+    await Notification.create({
+      userId: request.requesterId,
+      senderId: request.recipientId,
+      type: 'acceptedFriendRequest',
+      message: `${request.recipientId.firstName} ${request.recipientId.familyName} accepted your friend request!`,
+    });
+
+    await Notification.destroy({
+      where: {
+        userId: request.recipientId, 
+        senderId: request.requesterId,
+        type: 'friendRequest'
+      }
+    });
 
     wss.clients.forEach(client => {
       if (client.readyState === ws.OPEN) {
@@ -350,6 +372,21 @@ async function rejectFriendRequest(ws, data) {
 
     request.status = 'rejected';
     await request.save();
+
+    await Notification.create({
+      userId: request.requesterId,
+      senderId: request.recipientId,
+      type: 'rejectFriendRequest',
+      message: `${request.recipientId.firstName} ${request.recipientId.familyName} rejected your friend request!`,
+    });
+
+    await Notification.destroy({
+      where: {
+        userId: request.recipientId, 
+        senderId: request.requesterId,
+        type: 'friendRequest'
+      }
+    });
 
     const requester = await User.findByPk(request.requesterId);
     wss.clients.forEach(client => {
