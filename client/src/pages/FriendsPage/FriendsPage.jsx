@@ -3,7 +3,7 @@ import { DataContext } from "../../context/DataContext"
 
 const FriendsPage = () => {
     // Gets global data from the context
-    const { crud, access, socketRef } = useContext(DataContext)
+    const { crud, socketSend } = useContext(DataContext)
 
 
 
@@ -36,21 +36,18 @@ const FriendsPage = () => {
     // Sends a friend request through the web socket server
     const addFriend = (e) => {
         e.preventDefault()
-        console.log("ADD FRIEND")
-
-        socketRef.current.send(JSON.stringify({
-            token: access,
+        
+        socketSend({
             type: 'addFriend',
             email: friendAdd
-        }))
+        })
     }
 
 
 
     // Accepts a friend request through the web socket server
     const handleAcceptFriend = (requestId) => {
-        socketRef.current.send(JSON.stringify({
-            token: access,
+        socketSend(JSON.stringify({
             type: 'acceptFriend',
             requestId
         }))
@@ -60,8 +57,7 @@ const FriendsPage = () => {
 
     // Rejects a friend request through the web socket server
     const handleRejectFriend = (requestId) => {
-        socketRef.current.send(JSON.stringify({
-            token: access,
+        socketSend(JSON.stringify({
             type: 'rejectFriend',
             requestId
         }))

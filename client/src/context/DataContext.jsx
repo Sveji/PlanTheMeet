@@ -102,6 +102,16 @@ const DataProvider = ({ children }) => {
 
 
 
+    // Sends a request through the web socket server and attaches the token
+    const socketSend = (data = {}) => {
+        socketRef.current.send(JSON.stringify({
+            token: access,
+            ...data
+        }))
+    }
+
+
+
     // Gets friend color for a list from index
     const getFriendColor = (index) => {
         switch (index % 6) {
@@ -119,7 +129,8 @@ const DataProvider = ({ children }) => {
     return (
         <DataContext.Provider value={{
             navigate,
-            crud, access, setAccess, refresh, setRefresh,
+            crud, socketSend,
+            access, setAccess, refresh, setRefresh,
             grid, setGrid,
             socketRef,
             getSeason,
