@@ -6,6 +6,7 @@ import Register from "./pages/Register/Register"
 import Login from "./pages/Login/Login"
 import AddEvent from "./pages/AddEvent/AddEvent"
 import Nav from "./components/Nav/Nav"
+import FriendsPage from "./pages/FriendsPage/FriendsPage"
 
 function App() {
 
@@ -23,6 +24,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/add-event" element={<AddEvent />} />
+          <Route path="/friends" element={<FriendsPage />} />
 
         </Routes>
 

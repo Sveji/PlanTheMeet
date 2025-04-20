@@ -107,6 +107,7 @@ const DataProvider = ({ children }) => {
             navigate,
             crud, access, setAccess, refresh, setRefresh,
             grid, setGrid,
+            socketRef,
             getSeason
         }}>
             { children }
