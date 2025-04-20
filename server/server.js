@@ -15,6 +15,7 @@ require('./auth/google');
 const http = require('http');
 const { Server } = require('ws');
 const { Op } = require('sequelize');
+const { OAuth2Client } = require('google-auth-library');
 
 const alllowedCORS = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003']
 
@@ -116,27 +117,63 @@ app.post('/auth/register', async (req, res) => {
     }
 });
 
-app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+// app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-app.get('/auth/google/callback', (req, res, next) => {
-    passport.authenticate('google', { session: false }, (err, user, info) => {
-      if (err || !user) {
-        console.log('Hit with err:', err)
-        return res.status(401).json({ message: 'Authentication failed', error: err });
-      }
-      const token = jwt.sign(
-        {
-          id: user.id,
-          email: user.email
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: '1h' }
-      );
-      console.log(token)
+// app.get('/auth/google/callback', (req, res, next) => {
+//     passport.authenticate('google', { session: false }, (err, user, info) => {
+//       if (err || !user) {
+//         console.log('Hit with err:', err)
+//         return res.status(401).json({ message: 'Authentication failed', error: err });
+//       }
+//       const token = jwt.sign(
+//         {
+//           id: user.id,
+//           email: user.email
+//         },
+//         process.env.JWT_SECRET,
+//         { expiresIn: '1h' }
+//       );
+//       console.log(token)
   
-      return res.json({ token, user });
-    })(req, res, next);
+//       return res.json({ token, user });
+//     })(req, res, next);
+// });
+
+app.post('/auth/google/token', async (req, res) => {
+  const { token } = req.body;
+  const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, given_name, family_name, picture } = payload;
+
+    let user = await User.findOne({ where: { googleId } });
+
+    if (!user) {
+      user = await User.create({
+        googleId,
+        email,
+        firstName: given_name,
+        familyName: family_name,
+        photo: picture,
+      });
+    }
+
+    const jwtToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({ token: jwtToken, user });
+
+  } catch (error) {
+    console.error('Google token verify error', error);
+    res.status(401).json({ error: 'Invalid Google token' });
+  }
 });
+
 
 app.get('/', (req, res) => {
   res.send(`<h1>Welcome</h1><a href="/auth/google">Login with Google</a>`);

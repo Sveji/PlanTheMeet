@@ -51,8 +51,15 @@ const Login = () => {
 
     // Sends a google login request to the backend
     const handleGoogleLoginSuccess = async (credentials) => {
-        const token = credentials.credential
-        console.log(token)
+        const idToken = credentials.credential;
+        console.log('sending idToken:', idToken);
+        const res = await fetch('http://127.0.0.1:5000/auth/google/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: idToken })
+        });
+        const result = await res.json()
+        console.log(result.token);
     }
 
     const handleGoogleLoginFailure = async () => {
