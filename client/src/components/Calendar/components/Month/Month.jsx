@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-const Month = ({ month = null, year = null }) => {
+const Month = ({ selected, setSelected, month = null, year = null }) => {
     // Holds the loading state for the calendar
     const [loading, setLoading] = useState(true)
 
@@ -53,7 +53,7 @@ const Month = ({ month = null, year = null }) => {
                 !loading &&
                 dates.map((date, index) => (
                     date ?
-                    <div key={index} className={`
+                    <div onClick={() => setSelected(date)} key={index} className={`
                         date
                         ${index % 2 == 1 ? 'disabled' : null}
                         ${date.getDay() == 0 || date.getDay() == 6 ? 'weekend' : null}
@@ -62,6 +62,13 @@ const Month = ({ month = null, year = null }) => {
                             date.getMonth() === new Date().getMonth() && 
                             date.getDate() === new Date().getDate() 
                             ? 'today' : null
+                        }
+                        ${
+                            selected &&
+                            date.getFullYear() === selected.getFullYear() &&
+                            date.getMonth() === selected.getMonth() && 
+                            date.getDate() === selected.getDate() 
+                            ? 'selected' : null
                         }`
                     }>
                         <div className="day-box">

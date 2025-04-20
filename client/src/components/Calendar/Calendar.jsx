@@ -5,14 +5,9 @@ import { FaArrowLeft, FaArrowRight } from "react-icons/fa6";
 import TextBox from './components/TextBox/TextBox';
 import { DataContext } from '../../context/DataContext';
 
-const Calendar = () => {
+const Calendar = ({ ref, selected, setSelected }) => {
     // Gets global data from the context
     const { getSeason } = useContext(DataContext)
-
-
-
-    // Holds the selected date
-    const [selected, setSelected] = useState(null)
 
 
 
@@ -56,9 +51,9 @@ const Calendar = () => {
 
 
     return (
-        <div className={`calendar ${season}`}>
+        <div ref={ref} className={`calendar ${season}`}>
             <TextBox month={month} setMonth={setMonth} year={year} setYear={setYear} getMonthName={getMonthName} />
-            <Month month={month} year={year} />
+            <Month selected={selected} setSelected={setSelected} month={month} year={year} />
         </div>
     )
 }

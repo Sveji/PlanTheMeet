@@ -1,3 +1,5 @@
+@import url('../../globalStyling/variables.less');
+
 .calendar-section {
     padding: 0 3.2rem;
     width: 100%;
@@ -16,6 +18,9 @@
         // width: 100%;
         // background-color: aqua;
         min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 3.2rem;
 
         .input-container {
             width: 100%;
@@ -27,7 +32,6 @@
             border: solid 0.2rem black;
             // box-shadow: 0.6rem 0.6rem 0 black;
             padding: 1rem;
-            margin-bottom: 3.2rem;
 
             .icon {
                 width: 2.4rem;
@@ -46,7 +50,115 @@
             display: flex;
             flex-direction: column;
             gap: 1.6rem;
+            overflow-y: auto;
+            padding-right: 0.4rem;
             // width: 100%;
+        }
+    }
+
+    .section-day {
+        padding-top: 15rem;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        // max-height: 116vh;
+        overflow: hidden;
+
+        .day-info-container {
+            background-color: white;
+            border-radius: 2rem;
+            border: solid 0.2rem black;
+            box-shadow: 0.4rem 0.4rem 0 black;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 1.6rem;
+            height: 100%;
+            padding-bottom: 1.6rem;
+            // max-height: 116vh;
+
+            .title-box {
+                background-color: var(--purple);
+                border-bottom: solid 0.2rem black;
+                padding: 0.4rem 1.6rem;
+                
+
+                display: flex;
+                align-items: center;
+
+                .icon {
+                    width: 2.4rem;
+                    height: 2.4rem;
+                    cursor: pointer;
+                }
+
+                .title {
+                    text-align: center;
+                    flex-grow: 1;
+                }
+            }
+
+            .info-box {
+                padding: 0.4rem 1.6rem;
+                flex-grow: 1;
+                overflow: auto;
+
+                .btn {
+                    background-color: var(--green);
+                    font-family: inherit;
+                    font-size: 1.6rem;
+                    border: solid 0.2rem black;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    border-radius: 1rem;
+                    padding: 1.2rem;
+                    width: 100%;
+                    margin-bottom: 3.2rem;
+                    cursor: pointer;
+                    transition: 0.2s;
+
+                    &:hover {
+                        // transform: translate(10rem 0.4rem);
+                        transform: translate(0.4rem, 0.4rem);
+                        // transform: translateY(0.4rem);
+                    }
+                }
+
+                .title {
+                    font-family: @font-secondary;
+                    font-size: 2.4rem;
+                }
+
+                .holidays-container {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.8rem;
+                    padding-bottom: 1.6rem;
+                    margin-bottom: 1.6rem;
+                    border-bottom: solid 0.1rem black;
+                }
+
+                .events-container {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.4rem;
+
+                    .event {
+                        .title {
+                            font-size: 1.8rem;
+                            font-family: @font-primary;
+                        }
+
+                        .details {
+                            font-style: italic;
+                            font-size: 1.4rem;
+                            text-decoration: none;
+                            color: var(--purple-shade-5);
+                        }
+                    }
+                }
+            }
         }
     }
 }

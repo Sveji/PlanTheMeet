@@ -4,7 +4,7 @@ import Friend from "../../../../components/Friend/Friend";
 import DuplicateBox from "../../../../components/DuplicateBox/DuplicateBox";
 import { DataContext } from "../../../../context/DataContext";
 
-const Friends = () => {
+const Friends = ({ ref }) => {
     // Gets global data from the context
     const { getFriendColor } = useContext(DataContext)
 
@@ -14,7 +14,7 @@ const Friends = () => {
 
 
     return (
-        <div className="friends-column">
+        <div ref={ref} className="friends-column">
             <DuplicateBox>
                 <div className="input-container">
                     <HiOutlineSearch className="icon"/>

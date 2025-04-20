@@ -131,6 +131,12 @@
         .date {
             cursor: pointer;
             transition: 0.2s;
+            // background-color: aqua;
+            // width: 12.8rem;
+            aspect-ratio: 1 / 1;
+            border-radius: 1rem;
+            overflow: hidden;
+            border: solid 0.1rem var(--border);
 
             &:hover {
                 transform: scale(1.05);
@@ -170,12 +176,13 @@
                 }
             }
 
-            // background-color: aqua;
-            // width: 12.8rem;
-            aspect-ratio: 1 / 1;
-            border-radius: 1rem;
-            overflow: hidden;
-            border: solid 0.1rem var(--border);
+            &.selected {
+                transform: scale(1.1);
+                .day-box {
+                    border-bottom: solid 0.1rem var(--border);
+                }
+            }
+
 
             .day-box {
                 background-color: var(--main);
