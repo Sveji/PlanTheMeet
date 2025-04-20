@@ -1,0 +1,37 @@
+@import url('../../globalStyling/variables.less');
+
+.section-chat {
+    --height: 100vh;
+    display: grid;
+    grid-template-columns: 25fr 75fr;
+    padding: 0 3.5rem;
+    min-height: var(--height);
+
+    .chats-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.6rem;
+        padding: 2rem;
+        border: solid 0.2rem black;
+        border-radius: 2rem;
+        background-color: var(--bg);
+        height: var(--height);
+        // height: 100vh;
+        flex-shrink: 1;
+        overflow: auto;
+
+        .friend {
+            padding: 1.2rem;
+            cursor: pointer;
+
+            .user-info {
+                gap: 1.2rem;
+
+                .pfp {
+                    width: 4.8rem;
+                    height: 4.8rem;
+                }
+            }
+        }
+    }
+}

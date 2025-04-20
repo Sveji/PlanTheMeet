@@ -1,23 +1,16 @@
-import { useState } from "react"
+import { useContext, useState } from "react"
 import { HiOutlineSearch } from "react-icons/hi";
 import Friend from "../../../../components/Friend/Friend";
 import DuplicateBox from "../../../../components/DuplicateBox/DuplicateBox";
+import { DataContext } from "../../../../context/DataContext";
 
 const Friends = () => {
+    // Gets global data from the context
+    const { getFriendColor } = useContext(DataContext)
+
+
+
     const [search, setSearch] = useState('')
-
-
-    // Gets friend color from index
-    const getColor = (index) => {
-        switch (index % 6) {
-            case 0: return 'pink'
-            case 1: return 'green'
-            case 2: return 'blue'
-            case 3: return 'purple'
-            case 4: return 'red'
-            case 5: return 'orange'
-        }
-    }
 
 
     return (
@@ -40,7 +33,8 @@ const Friends = () => {
                         <Friend
                             key={i}
                             username='AlekPalek69bgXXAlekPalek69bgXXAlekPalek69bgXXAlekPalek69bgXXAlekPalek69bgXXAlekPalek69bgXX'
-                            color={getColor(i)}
+                            color={getFriendColor(i)}
+                            chatIcon
                         />
                     ))
                 }

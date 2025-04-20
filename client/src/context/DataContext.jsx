@@ -102,13 +102,28 @@ const DataProvider = ({ children }) => {
 
 
 
+    // Gets friend color for a list from index
+    const getFriendColor = (index) => {
+        switch (index % 6) {
+            case 0: return 'pink'
+            case 1: return 'green'
+            case 2: return 'blue'
+            case 3: return 'purple'
+            case 4: return 'red'
+            case 5: return 'orange'
+        }
+    }
+
+
+
     return (
         <DataContext.Provider value={{
             navigate,
             crud, access, setAccess, refresh, setRefresh,
             grid, setGrid,
             socketRef,
-            getSeason
+            getSeason,
+            getFriendColor
         }}>
             { children }
         </DataContext.Provider>

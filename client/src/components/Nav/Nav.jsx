@@ -17,7 +17,7 @@ const Nav = () => {
             label: 'Friends'
         },
         {
-            url: '/',
+            url: '/n',
             label: 'Notifications'
         },
     ]
@@ -29,8 +29,8 @@ const Nav = () => {
             <DuplicateBox>
                 <nav className="navbar">
                     {
-                        links.map(link => (
-                            <NavLink className={({isActive}) => `nav-link ${isActive && 'active'}`} to={link.url}>{link.label}</NavLink>
+                        links.map((link, i) => (
+                            <NavLink key={i} className={({isActive}) => `nav-link ${isActive && 'active'}`} to={link.url}>{link.label}</NavLink>
                         ))
                     }
                 </nav>
