@@ -66,6 +66,9 @@ const DataProvider = ({ children }) => {
     // Holds the user's notifications
     const [notifications, setNotifications] = useState([])
 
+    // Holds the error state for the friend requests
+    const [friendReqError, setFriendReqError] = useState(null)
+
 
 
     // Establishes a web socket connection on init
@@ -107,6 +110,9 @@ const DataProvider = ({ children }) => {
                     if(parsedData.type === 'acceptFriendSuccess' || parsedData.type === 'rejectFriendSuccess') {
                         const newNotifications = notifications.filter(notification => notification.type !== 'friendRequest' || (notification.type === 'friendRequest' && notification.data.requestId !== parsedData.requestId))
                         setNotifications(newNotifications)
+                    }
+                    if(parsedData.type === 'friendReqError') {
+                        setFriendReqError(parsedData.error)
                     }
                 }
             }
@@ -160,7 +166,8 @@ const DataProvider = ({ children }) => {
             socketRef,
             getSeason,
             getFriendColor,
-            notifications
+            notifications,
+            friendReqError
         }}>
             { children }
         </DataContext.Provider>

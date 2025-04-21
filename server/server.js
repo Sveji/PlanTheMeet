@@ -267,15 +267,15 @@ async function addFriendRequest(ws, data) {
     const recipient = await User.findOne({ where: { email: email } });
 
     if (!recipient) {
-      return ws.send(JSON.stringify({ error: 'User not found.' }));
+      return ws.send(JSON.stringify({ type: 'friendReqError', error: 'User not found.' }));
     }
 
     if(ws.user.id === recipient.id) {
-      return ws.send(JSON.stringify({ error: "You can't send a friend request to yourself." }))
+      return ws.send(JSON.stringify({ type: 'friendReqError', error: "You can't send a friend request to yourself." }))
     }
 
     if(ws.user.friends.includes(recipient.id)) {
-      return ws.send(JSON.stringify({ error: 'User is already your friend.' }))
+      return ws.send(JSON.stringify({ type: 'friendReqError', error: 'User is already your friend.' }))
     }
 
     const existingRequest = await FriendRequest.findOne({
@@ -287,7 +287,7 @@ async function addFriendRequest(ws, data) {
     });
 
     if (existingRequest) {
-      return ws.send(JSON.stringify({ message: 'Friend request already sent' }));
+      return ws.send(JSON.stringify({ type: 'friendReqError', error: 'Friend request already sent' }));
     }
 
     const friendRequest = await FriendRequest.create({
@@ -317,7 +317,7 @@ async function addFriendRequest(ws, data) {
 
   } catch (err) {
     console.error('Error adding friend request:', err);
-    ws.send(JSON.stringify({ error: 'Error sending friend request' }));
+    ws.send(JSON.stringify({ type: 'friendReqError', error: 'Error sending friend request' }));
   }
 }
 

@@ -4,7 +4,7 @@ import Notifications from "./Notifications"
 
 const FriendsPage = () => {
     // Gets global data from the context
-    const { crud, access, socketRef, socketSend } = useContext(DataContext)
+    const { crud, socketSend, friendReqError } = useContext(DataContext)
 
 
 
@@ -57,6 +57,10 @@ const FriendsPage = () => {
             }
 
             <h3>Add friends</h3>
+            {
+                friendReqError &&
+                <p className="error">{friendReqError}</p>
+            }
             <form onSubmit={(e) => addFriend(e)}>
                 <input
                     placeholder="Email"
@@ -65,9 +69,6 @@ const FriendsPage = () => {
                 />
                 <button type="submit">Add friend</button>
             </form>
-
-            <button onClick={() => handleAcceptFriend(30)}>Accept Marti</button>
-            <button onClick={() => handleRejectFriend(30)}>Reject Marti</button>
 
             <Notifications />
         </>
