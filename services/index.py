@@ -486,17 +486,170 @@ def get_calendar_events():
             </html>
             """
 
-@app.route('/syncFromJavascript', methods=['GET', 'POST'])
+# @app.route('/syncFromJavascript', methods=['GET', 'POST'])
+# def sync_from_javascript():
+#     """
+#     Fetch events from JavaScript endpoint and add them to Google Calendar.
+#     Returns both newly added events and all calendar events.
+#     """
+#     global credentials
+    
+#     try:
+#         logging.info("Starting sync from JavaScript endpoint")
+        
+#         # Get service or redirect to auth if needed
+#         service = get_google_calendar_service()
+#         if not service:
+#             if request.headers.get('Accept') == 'application/json':
+#                 return jsonify({
+#                     'success': False,
+#                     'error': 'Authentication required',
+#                     'auth_url': url_for('start_auth', _external=True)
+#                 }), 401
+#             else:
+#                 return redirect(url_for('start_auth'))
+        
+#         # First, fetch events from the JavaScript endpoint
+#         js_response = requests.get('http://localhost:5000/syncGoogleCallendar')
+#         js_events = js_response.json()
+#         logging.info(f"Fetched {len(js_events)} events from JavaScript endpoint")
+        
+#         # Track the events we've added
+#         added_events = []
+        
+#         # Add each event to the primary calendar
+#         for event in js_events:
+#             try:
+#                 # Create Google Calendar event object
+#                 google_event = {
+#                     'summary': event['title'],
+#                     'location': event.get('location', ''),
+#                     'description': format_description_from_event(event),
+#                     'start': {
+#                         'dateTime': event['datetime'],
+#                         'timeZone': 'UTC',  # You might want to adjust this based on user preference
+#                     },
+#                     'end': {
+#                         # Assuming each event is 1 hour by default if not specified
+#                         'dateTime': add_hour_to_datetime(event['datetime']),
+#                         'timeZone': 'UTC',
+#                     },
+#                 }
+                
+#                 # Add attendees if present
+#                 if event.get('invitedUserIds', []):
+#                     attendees = []
+#                     # In a real app, you would convert user IDs to email addresses
+#                     # This is a placeholder implementation
+#                     for user_id in event.get('invitedUserIds', []):
+#                         attendees.append({
+#                             'email': f"user_{user_id}@example.com",  # Placeholder
+#                             'responseStatus': 'needsAction'
+#                         })
+                    
+#                     # Mark confirmed users
+#                     for user_id in event.get('conformedUserIds', []):
+#                         for attendee in attendees:
+#                             if attendee['email'] == f"user_{user_id}@example.com":
+#                                 attendee['responseStatus'] = 'accepted'
+                    
+#                     # Mark users who declined
+#                     for user_id in event.get('notCommingUserIds', []):
+#                         for attendee in attendees:
+#                             if attendee['email'] == f"user_{user_id}@example.com":
+#                                 attendee['responseStatus'] = 'declined'
+                    
+#                     google_event['attendees'] = attendees
+                
+#                 # Insert event to primary calendar
+#                 logging.info(f"Adding event to Google Calendar: {event['title']}")
+#                 created_event = service.events().insert(
+#                     calendarId='primary',
+#                     body=google_event
+#                 ).execute()
+                
+#                 added_events.append({
+#                     'original_event': event,
+#                     'google_calendar_event': created_event
+#                 })
+#                 logging.info(f"Successfully added event: {event['title']}")
+            
+#             except Exception as evt_error:
+#                 logging.error(f"Error adding event {event.get('title', 'unknown')}: {str(evt_error)}")
+        
+#         # Now fetch all calendar events to return a complete list
+#         logging.info("Fetching all calendar events to include in response")
+        
+#         # Instead of calling the endpoint, we'll reuse the code to avoid redirect issues
+#         all_events = []
+        
+#         # Get time boundaries (1 month in the past to 1 year in the future)
+#         now = datetime.utcnow()
+#         time_min = (now - timedelta(days=30)).isoformat() + 'Z'
+#         time_max = (now + timedelta(days=365)).isoformat() + 'Z'
+        
+#         # Get calendar list
+#         calendar_list = service.calendarList().list().execute()
+        
+#         # Process each calendar
+#         for calendar_entry in calendar_list.get('items', []):
+#             calendar_id = calendar_entry['id']
+#             calendar_name = calendar_entry.get('summary', 'Unknown Calendar')
+#             is_primary = calendar_entry.get('primary', False)
+            
+#             try:
+#                 events_result = service.events().list(
+#                     calendarId=calendar_id,
+#                     timeMin=time_min,
+#                     timeMax=time_max,
+#                     singleEvents=True,
+#                     orderBy='startTime'
+#                 ).execute()
+                
+#                 for event in events_result.get('items', []):
+#                     # Format event (simplified for brevity)
+#                     start = event.get('start', {})
+#                     start_time = start.get('dateTime', start.get('date', '') + 'T00:00:00Z')
+                    
+#                     formatted_event = {
+#                         'id': event.get('id', ''),
+#                         'title': event.get('summary', 'No Title'),
+#                         'datetime': start_time,
+#                         'location': event.get('location', ''),
+#                         'description': event.get('description', ''),
+#                         'calendar_name': calendar_name,
+#                         'is_primary_calendar': is_primary,
+#                     }
+                    
+#                     all_events.append(formatted_event)
+#             except Exception as cal_error:
+#                 logging.error(f"Error processing calendar {calendar_name}: {str(cal_error)}")
+        
+#         return jsonify({
+#             'success': True,
+#             'added_events': added_events,
+#             'all_events': all_events,
+#             'total_events_added': len(added_events)
+#         })
+    
+#     except Exception as e:
+#         logging.error(f"Error in sync_from_javascript: {str(e)}")
+#         return jsonify({
+#             'success': False,
+#             'error': str(e)
+#         }), 500
+
+@app.route('/syncFromJavascript', methods=['POST'])
 def sync_from_javascript():
     """
-    Fetch events from JavaScript endpoint and add them to Google Calendar.
+    Accept events from a JavaScript endpoint via POST and add them to Google Calendar.
     Returns both newly added events and all calendar events.
     """
     global credentials
-    
+
     try:
         logging.info("Starting sync from JavaScript endpoint")
-        
+
         # Get service or redirect to auth if needed
         service = get_google_calendar_service()
         if not service:
@@ -508,15 +661,21 @@ def sync_from_javascript():
                 }), 401
             else:
                 return redirect(url_for('start_auth'))
-        
-        # First, fetch events from the JavaScript endpoint
-        js_response = requests.get('http://localhost:5000/syncGoogleCallendar')
-        js_events = js_response.json()
-        logging.info(f"Fetched {len(js_events)} events from JavaScript endpoint")
-        
+
+        # Parse the JSON payload from the request
+        js_events = request.get_json()
+        if not js_events:
+            logging.error("No JSON payload received")
+            return jsonify({
+                'success': False,
+                'error': 'No JSON payload received'
+            }), 400
+
+        logging.info(f"Received {len(js_events)} events from JavaScript endpoint")
+
         # Track the events we've added
         added_events = []
-        
+
         # Add each event to the primary calendar
         for event in js_events:
             try:
@@ -527,7 +686,7 @@ def sync_from_javascript():
                     'description': format_description_from_event(event),
                     'start': {
                         'dateTime': event['datetime'],
-                        'timeZone': 'UTC',  # You might want to adjust this based on user preference
+                        'timeZone': 'UTC',  # Adjust based on user preference
                     },
                     'end': {
                         # Assuming each event is 1 hour by default if not specified
@@ -535,68 +694,64 @@ def sync_from_javascript():
                         'timeZone': 'UTC',
                     },
                 }
-                
+
                 # Add attendees if present
                 if event.get('invitedUserIds', []):
                     attendees = []
-                    # In a real app, you would convert user IDs to email addresses
-                    # This is a placeholder implementation
                     for user_id in event.get('invitedUserIds', []):
                         attendees.append({
                             'email': f"user_{user_id}@example.com",  # Placeholder
                             'responseStatus': 'needsAction'
                         })
-                    
+
                     # Mark confirmed users
                     for user_id in event.get('conformedUserIds', []):
                         for attendee in attendees:
                             if attendee['email'] == f"user_{user_id}@example.com":
                                 attendee['responseStatus'] = 'accepted'
-                    
+
                     # Mark users who declined
                     for user_id in event.get('notCommingUserIds', []):
                         for attendee in attendees:
                             if attendee['email'] == f"user_{user_id}@example.com":
                                 attendee['responseStatus'] = 'declined'
-                    
+
                     google_event['attendees'] = attendees
-                
+
                 # Insert event to primary calendar
                 logging.info(f"Adding event to Google Calendar: {event['title']}")
                 created_event = service.events().insert(
                     calendarId='primary',
                     body=google_event
                 ).execute()
-                
+
                 added_events.append({
                     'original_event': event,
                     'google_calendar_event': created_event
                 })
                 logging.info(f"Successfully added event: {event['title']}")
-            
+
             except Exception as evt_error:
                 logging.error(f"Error adding event {event.get('title', 'unknown')}: {str(evt_error)}")
-        
-        # Now fetch all calendar events to return a complete list
+
+        # Fetch all calendar events to return a complete list
         logging.info("Fetching all calendar events to include in response")
-        
-        # Instead of calling the endpoint, we'll reuse the code to avoid redirect issues
         all_events = []
-        
+
         # Get time boundaries (1 month in the past to 1 year in the future)
         now = datetime.utcnow()
         time_min = (now - timedelta(days=30)).isoformat() + 'Z'
         time_max = (now + timedelta(days=365)).isoformat() + 'Z'
-        
+
         # Get calendar list
         calendar_list = service.calendarList().list().execute()
-        
+
         # Process each calendar
         for calendar_entry in calendar_list.get('items', []):
             calendar_id = calendar_entry['id']
             calendar_name = calendar_entry.get('summary', 'Unknown Calendar')
             is_primary = calendar_entry.get('primary', False)
-            
+
             try:
                 events_result = service.events().list(
                     calendarId=calendar_id,
@@ -605,12 +760,12 @@ def sync_from_javascript():
                     singleEvents=True,
                     orderBy='startTime'
                 ).execute()
-                
+
                 for event in events_result.get('items', []):
                     # Format event (simplified for brevity)
                     start = event.get('start', {})
                     start_time = start.get('dateTime', start.get('date', '') + 'T00:00:00Z')
-                    
+
                     formatted_event = {
                         'id': event.get('id', ''),
                         'title': event.get('summary', 'No Title'),
@@ -620,18 +775,18 @@ def sync_from_javascript():
                         'calendar_name': calendar_name,
                         'is_primary_calendar': is_primary,
                     }
-                    
+
                     all_events.append(formatted_event)
             except Exception as cal_error:
                 logging.error(f"Error processing calendar {calendar_name}: {str(cal_error)}")
-        
+
         return jsonify({
             'success': True,
             'added_events': added_events,
             'all_events': all_events,
             'total_events_added': len(added_events)
         })
-    
+
     except Exception as e:
         logging.error(f"Error in sync_from_javascript: {str(e)}")
         return jsonify({
