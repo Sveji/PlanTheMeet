@@ -94,7 +94,7 @@ const DataProvider = ({ children }) => {
                     }
                     if(parsedData.type === "notification") {
                         const newNotifications = [
-                            parsedData.message,
+                            parsedData.notification,
                             ...notifications
                         ]
                         console.log(newNotifications)

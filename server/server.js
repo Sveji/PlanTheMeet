@@ -344,7 +344,7 @@ async function acceptFriendRequest(ws, data) {
     await request.save();
 
 
-    await Notification.create({
+    const notification = await Notification.create({
       userId: request.requesterId,
       senderId: request.recipientId,
       type: 'acceptedFriendRequest',
@@ -365,7 +365,7 @@ async function acceptFriendRequest(ws, data) {
           client.send(JSON.stringify({ message: `You accepted the friend request from ${requester.email}` }));
         }
         if (client.user.id === requester.id) {
-          client.send(JSON.stringify({ type: 'notification', message: `${ws.user.email} accepted your friend request` }));
+          client.send(JSON.stringify({ type: 'notification', notification }));
         }
       }
     });
@@ -393,7 +393,7 @@ async function rejectFriendRequest(ws, data) {
     request.status = 'rejected';
     await request.save();
 
-    await Notification.create({
+    const notification = await Notification.create({
       userId: request.requesterId,
       senderId: request.recipientId,
       type: 'rejectFriendRequest',
@@ -415,7 +415,7 @@ async function rejectFriendRequest(ws, data) {
           client.send(JSON.stringify({ message: `You rejected the friend request from ${requester.email}` }));
         }
         if (client.user.id === requester.id) {
-          client.send(JSON.stringify({ message: `${ws.user.email} rejected your friend request` }));
+          client.send(JSON.stringify({ type: 'notification', notification }));
         }
       }
     });
