@@ -2,7 +2,9 @@ import { useContext, useState } from "react"
 import { HiOutlineSearch } from "react-icons/hi";
 import Friend from "../../../../components/Friend/Friend";
 import DuplicateBox from "../../../../components/DuplicateBox/DuplicateBox";
+import Search from "../../../../components/Search/Search"
 import { DataContext } from "../../../../context/DataContext";
+
 
 const Friends = ({ ref }) => {
     // Gets global data from the context
@@ -16,15 +18,14 @@ const Friends = ({ ref }) => {
     return (
         <div ref={ref} className="friends-column">
             <DuplicateBox>
-                <div className="input-container">
-                    <HiOutlineSearch className="icon"/>
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search friend"
-                    />
-                </div>
+
+                <Search
+                    placeholder=" search friend"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+
+
             </DuplicateBox>
 
             <div className="friends-list">
