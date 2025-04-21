@@ -1,7 +1,9 @@
 import pfp from '../../img/pfp.png'
 import { IoChatbubbleOutline } from "react-icons/io5";
+import { IoClose } from "react-icons/io5";
 
-const Friend = ({ color = 'pink', image = pfp, firstName = 'Alek', familyName = 'Palek', chatIcon = false }) => {
+
+const Friend = ({ color = 'pink', image = pfp, firstName = 'Alek', familyName = 'Palek', chatIcon = false, crossIcon = false }) => {
     return (
         <div className={`friend ${color}`}>
             <div className="user-info">
@@ -14,6 +16,13 @@ const Friend = ({ color = 'pink', image = pfp, firstName = 'Alek', familyName = 
                     chatIcon &&
                     <div className="icon-container">
                         <IoChatbubbleOutline className='icon' />
+                    </div>
+
+                }
+                {
+                    crossIcon &&
+                    <div className='icon-container'>
+                        <IoClose className='icon' />
                     </div>
                 }
             </div>
