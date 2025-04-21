@@ -14,7 +14,7 @@ const Notification = require('./models/notification');
 require('./auth/google');
 const http = require('http');
 const { Server } = require('ws');
-const { Op } = require('sequelize');
+const { Op, where } = require('sequelize');
 const { OAuth2Client } = require('google-auth-library');
 const axios = require('axios');
 const { google } = require('googleapis');
@@ -963,6 +963,14 @@ async function getGoogleCalendarEvents(user, startDate, endDate) {
     type: 'googleCalendar'
   }));
 }
+
+app.get('/syncGoogleCallendar', authenticateJWTasync, async (req, res) => {
+  const userId = req.user.id;
+  const userEvents = await Event.findAll({where: {
+    userId: userId
+  }})
+  //Prashrtat se na Alek
+})
 
 // app.listen(PORT, () => {
 //     console.log(`Server is running on http://localhost:${PORT}`);
