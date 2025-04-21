@@ -263,55 +263,16 @@ def start_auth():
         # Open browser automatically to the auth URL
         webbrowser.open(authorization_url)
         
-        return f"""
-        <html>
-            <head>
-                <style>
-                    body {{ font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }}
-                    h1 {{ color: #333; }}
-                    .info {{ background: #e6f3ff; padding: 10px; border-radius: 4px; }}
-                    .button {{ 
-                        display: inline-block; 
-                        background: #4285f4; 
-                        color: white; 
-                        padding: 10px 20px; 
-                        text-decoration: none; 
-                        border-radius: 4px; 
-                        margin-top: 10px; 
-                    }}
-                </style>
-            </head>
-            <body>
-                <h1>Google Calendar API Authentication</h1>
-                <div class="info">
-                    <p>If a browser window didn't open automatically, please <a href="{authorization_url}">click here</a> to authenticate with Google.</p>
-                    <p>Using redirect URI: {REDIRECT_URI}</p>
-                </div>
-                <p>After authentication, you will be redirected back to this application.</p>
-            </body>
-        </html>
-        """
+        return jsonify({
+            'status': 200,
+            'success': True
+        }), 200
     except Exception as e:
         logging.error(f"Error starting OAuth flow: {str(e)}")
-        return f"""
-        <html>
-            <head>
-                <style>
-                    body {{ font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }}
-                    h1 {{ color: #333; }}
-                    .error {{ background: #ffe6e6; padding: 10px; border-radius: 4px; }}
-                </style>
-            </head>
-            <body>
-                <h1>Authentication Error</h1>
-                <div class="error">
-                    <p>Error: {str(e)}</p>
-                    <p>Ensure your Google Cloud Console project has the correct redirect URI configured:</p>
-                    <code>{REDIRECT_URI}</code>
-                </div>
-            </body>
-        </html>
-        """
+        return jsonify({
+            'status': 400,
+            'success': False
+        }), 400
 
 @app.route('/calendar/events', methods=['GET'])
 def get_calendar_events():
@@ -648,20 +609,52 @@ def sync_from_javascript():
     global credentials
 
     try:
+        # logging.info("Starting sync from JavaScript endpoint")
+
+
+        # # Get service or redirect to auth if needed
+        # service = get_google_calendar_service()
+        # if not service:
+        #     if request.headers.get('Accept') == 'application/json':
+        #         response = jsonify({
+        #             'success': False,
+        #             'error': 'Authentication required',
+        #             'auth_url': url_for('start_auth', _external=True)
+        #         }), 401
+        #         if response.response(code = 200):
+        #             pass
+        #         else:
+        #             return response
+        #         # if response['status'] != 200:
+        #         #     return response
+        #     else:
+        #         response = redirect(url_for('start_auth'))
+        #         if response.response(code = 200):
+        #             pass
+        #         else:
+        #             return response
+        #         # if response['status'] != 200:
+        #         #     return response
+
         logging.info("Starting sync from JavaScript endpoint")
 
-
-        # Get service or redirect to auth if needed
         service = get_google_calendar_service()
         if not service:
             if request.headers.get('Accept') == 'application/json':
-                return jsonify({
+                auth_response = jsonify({
                     'success': False,
                     'error': 'Authentication required',
                     'auth_url': url_for('start_auth', _external=True)
                 }), 401
             else:
-                return redirect(url_for('start_auth'))
+                auth_response = redirect(url_for('start_auth'))
+            
+            if auth_response[1] == 200:
+                service = get_google_calendar_service()
+                if not service:
+                    return auth_response
+            else:
+                return auth_response
 
         # Parse the JSON payload from the request
         js_events = request.get_json()
