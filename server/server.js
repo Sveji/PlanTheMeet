@@ -267,7 +267,11 @@ async function addFriendRequest(ws, data) {
     const recipient = await User.findOne({ where: { email: email } });
 
     if (!recipient) {
-      return ws.send(JSON.stringify({ error: 'User not found' }));
+      return ws.send(JSON.stringify({ error: 'User not found.' }));
+    }
+
+    if(ws.user.friends.includes(recipient.id)) {
+      return ws.send(JSON.stringify({ error: 'User is already your friend.' }))
     }
 
     const existingRequest = await FriendRequest.findOne({
