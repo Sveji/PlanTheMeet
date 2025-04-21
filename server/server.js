@@ -299,6 +299,7 @@ async function addFriendRequest(ws, data) {
     await Notification.create({
       userId: recipient.id,
       senderId: ws.user.id,
+      data: { requestId: friendRequest.id },
       type: 'friendRequest',
       message: `${ws.user.firstName} ${ws.user.familyName} sent you a friend request!`,
     });
@@ -362,7 +363,7 @@ async function acceptFriendRequest(ws, data) {
     wss.clients.forEach(client => {
       if (client.readyState === ws.OPEN) {
         if (client.user.id === ws.user.id) {
-          client.send(JSON.stringify({ message: `You accepted the friend request from ${requester.email}` }));
+          client.send(JSON.stringify({ type: 'acceptFriendSuccess', message: `You accepted the friend request from ${requester.email}`, requestId }));
         }
         if (client.user.id === requester.id) {
           client.send(JSON.stringify({ type: 'notification', notification }));
@@ -412,7 +413,7 @@ async function rejectFriendRequest(ws, data) {
     wss.clients.forEach(client => {
       if (client.readyState === ws.OPEN) {
         if (client.user.id === ws.user.id) {
-          client.send(JSON.stringify({ message: `You rejected the friend request from ${requester.email}` }));
+          client.send(JSON.stringify({ type: 'rejectFriendSuccess', message: `You rejected the friend request from ${requester.email}`, requestId }));
         }
         if (client.user.id === requester.id) {
           client.send(JSON.stringify({ type: 'notification', notification }));

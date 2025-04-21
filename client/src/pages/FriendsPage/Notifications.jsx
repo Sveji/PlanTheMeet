@@ -17,6 +17,26 @@ const Notifications = () => {
 
 
 
+    // Accepts a friend request through the web socket server
+    const handleAcceptFriend = (requestId) => {
+        socketSend({
+            type: 'acceptFriend',
+            requestId
+        })
+    }
+
+
+
+    // Rejects a friend request through the web socket server
+    const handleRejectFriend = (requestId) => {
+        socketSend({
+            type: 'rejectFriend',
+            requestId
+        })
+    }
+
+
+
     return (
         <div>
             {
@@ -24,7 +44,15 @@ const Notifications = () => {
                 notifications.map((notification, i) => (
                     <div key={i} className="notification">
                         <p>{notification.message}</p>
-                        <button onClick={() => handleMarkAsRead(notification.id)}>Mark as read</button>
+                        {
+                            notification.type === 'friendRequest' ?
+                            <>
+                                <button onClick={() => handleAcceptFriend(notification.data.requestId)}>Accept</button>
+                                <button onClick={() => handleRejectFriend(notification.data.requestId)}>Reject</button>
+                            </>
+                            :
+                            <button onClick={() => handleMarkAsRead(notification.id)}>Mark as read</button>
+                        }
                     </div>
                 ))
             }

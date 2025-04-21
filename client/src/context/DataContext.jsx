@@ -104,6 +104,10 @@ const DataProvider = ({ children }) => {
                         const newNotifications = notifications.filter(notification => notification.id !== parsedData.notificationId)
                         setNotifications(newNotifications)
                     }
+                    if(parsedData.type === 'acceptFriendSuccess' || parsedData.type === 'rejectFriendSuccess') {
+                        const newNotifications = notifications.filter(notification => notification.type !== 'friendRequest' || (notification.type === 'friendRequest' && notification.data.requestId !== parsedData.requestId))
+                        setNotifications(newNotifications)
+                    }
                 }
             }
 

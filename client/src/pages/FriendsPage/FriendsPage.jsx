@@ -46,26 +46,6 @@ const FriendsPage = () => {
 
 
 
-    // Accepts a friend request through the web socket server
-    const handleAcceptFriend = (requestId) => {
-        socketSend({
-            type: 'acceptFriend',
-            requestId
-        })
-    }
-
-
-
-    // Rejects a friend request through the web socket server
-    const handleRejectFriend = (requestId) => {
-        socketSend({
-            type: 'rejectFriend',
-            requestId
-        })
-    }
-
-
-
     return (
         <>
             <h3>Your friends</h3>
@@ -86,8 +66,8 @@ const FriendsPage = () => {
                 <button type="submit">Add friend</button>
             </form>
 
-            <button onClick={() => handleAcceptFriend(29)}>Accept Marti</button>
-            <button onClick={() => handleRejectFriend(29)}>Reject Marti</button>
+            <button onClick={() => handleAcceptFriend(30)}>Accept Marti</button>
+            <button onClick={() => handleRejectFriend(30)}>Reject Marti</button>
 
             <Notifications />
         </>
