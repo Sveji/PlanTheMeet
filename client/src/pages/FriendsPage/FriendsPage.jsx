@@ -86,8 +86,8 @@ const FriendsPage = () => {
                 <button type="submit">Add friend</button>
             </form>
 
-            <button onClick={() => handleAcceptFriend(22)}>Accept Marti</button>
-            <button onClick={() => handleRejectFriend(22)}>Reject Marti</button>
+            <button onClick={() => handleAcceptFriend(26)}>Accept Marti</button>
+            <button onClick={() => handleRejectFriend(26)}>Reject Marti</button>
 
             <Notifications />
         </>
