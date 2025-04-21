@@ -267,7 +267,15 @@ async function addFriendRequest(ws, data) {
     const recipient = await User.findOne({ where: { email: email } });
 
     if (!recipient) {
-      return ws.send(JSON.stringify({ error: 'User not found' }));
+      return ws.send(JSON.stringify({ error: 'User not found.' }));
+    }
+
+    if(ws.user.id === recipient.id) {
+      return ws.send(JSON.stringify({ error: "You can't send a friend request to yourself." }))
+    }
+
+    if(ws.user.friends.includes(recipient.id)) {
+      return ws.send(JSON.stringify({ error: 'User is already your friend.' }))
     }
 
     const existingRequest = await FriendRequest.findOne({
@@ -321,15 +329,20 @@ async function acceptFriendRequest(ws, data) {
       return ws.send(JSON.stringify({ error: 'Invalid or expired request' }));
     }
 
+    const requester = await User.findByPk(request.requesterId);
+    if(!requester) {
+      return ws.send(JSON.stringify({ error: "Couldn't find requester." }))
+    }
+    requester.friends = [...requester.friends, ws.user.id];
+    ws.user.friends = [...ws.user.friends, requester.id];
+
+    await requester.save();
+    await ws.user.save();
+
+
     request.status = 'accepted';
     await request.save();
 
-    const requester = await User.findByPk(request.requesterId);
-    requester.friends.push(ws.user.id);
-    ws.user.friends.push(requester.id);
-    
-    await requester.save();
-    await ws.user.save();
 
     await Notification.create({
       userId: request.requesterId,
