@@ -964,7 +964,7 @@ async function getGoogleCalendarEvents(user, startDate, endDate) {
   }));
 }
 
-app.get('/syncGoogleCallendar', authenticateJWTasync, async (req, res) => {
+app.get('/syncGoogleCallendar', authenticateJWT, async (req, res) => {
   const userId = req.user.id;
   const userEvents = await Event.findAll({where: {
     userId: userId
