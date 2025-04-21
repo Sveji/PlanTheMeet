@@ -650,6 +650,7 @@ def sync_from_javascript():
     try:
         logging.info("Starting sync from JavaScript endpoint")
 
+
         # Get service or redirect to auth if needed
         service = get_google_calendar_service()
         if not service:
@@ -676,8 +677,9 @@ def sync_from_javascript():
         # Track the events we've added
         added_events = []
 
+        print(js_events)
         # Add each event to the primary calendar
-        for event in js_events:
+        for event in js_events['userEvents']:
             try:
                 # Create Google Calendar event object
                 google_event = {

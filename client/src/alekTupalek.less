@@ -1,0 +1,155 @@
+// CSS for styling (basic example)
+// File: src/components/Calendar.css
+
+.calendar-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+  }
+  
+  .calendar-summary {
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .calendar-types {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  .calendar-type {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  .type-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+  
+  .type-indicator.primary {
+    background-color: #4285F4;
+  }
+  
+  .type-indicator.holidays {
+    background-color: #EA4335;
+  }
+  
+  .type-indicator.birthdays {
+    background-color: #FBBC05;
+  }
+  
+  .type-indicator.other {
+    background-color: #34A853;
+  }
+  
+  .events-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .event-item {
+    display: flex;
+    padding: 15px;
+    border-left: 4px solid #ddd;
+    margin-bottom: 10px;
+    background-color: #f9f9f9;
+    border-radius: 0 4px 4px 0;
+  }
+  
+  .event-item.primary {
+    border-left-color: #4285F4;
+  }
+  
+  .event-item.holidays {
+    border-left-color: #EA4335;
+  }
+  
+  .event-item.birthdays {
+    border-left-color: #FBBC05;
+  }
+  
+  .event-date {
+    min-width: 140px;
+    font-weight: bold;
+  }
+  
+  .all-day {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    font-weight: normal;
+  }
+  
+  .event-details {
+    flex: 1;
+  }
+  
+  .event-title {
+    margin: 0 0 5px;
+  }
+  
+  .event-type {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    margin-bottom: 8px;
+    background-color: #eee;
+  }
+  
+  .event-location, .event-description {
+    margin: 5px 0;
+    font-size: 14px;
+  }
+  
+  .event-description {
+    color: #666;
+  }
+  
+  .loading {
+    text-align: center;
+    padding: 40px;
+    font-size: 18px;
+    color: #666;
+  }
+  
+  .error-message {
+    color: #EA4335;
+    padding: 10px;
+    background-color: #FDEDED;
+    border-radius: 4px;
+  }
+  
+  .calendar-auth {
+    text-align: center;
+    padding: 40px;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  
+  .auth-button {
+    padding: 10px 20px;
+    background-color: #4285F4;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  
+  .auth-button:hover {
+    background-color: #3367D6;
+  }

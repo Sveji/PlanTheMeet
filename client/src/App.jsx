@@ -8,6 +8,7 @@ import AddEvent from "./pages/AddEvent/AddEvent"
 import Nav from "./components/Nav/Nav"
 import FriendsPage from "./pages/FriendsPage/FriendsPage"
 import Chat from "./pages/Chat/Chat"
+import AlekTupalek from "./AlekTupalek"
 
 function App() {
 
@@ -29,6 +30,7 @@ function App() {
           <Route path="/chat" element={<Chat />} >
           
           </Route>
+          <Route path="alek-tupalek" element={<AlekTupalek />} />
 
         </Routes>
 

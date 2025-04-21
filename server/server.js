@@ -821,7 +821,13 @@ app.get('/syncGoogleCallendar', authenticateJWT, async (req, res) => {
   const userEvents = await Event.findAll({where: {
     userId: userId
   }})
+  
   //Prashrtat se na Alek
+  const response = await axios.post('http://localhost:5001/syncFromJavascript', {
+    userEvents
+  })
+
+  res.status(response.status).json(response.data)
 })
 
 // app.listen(PORT, () => {
