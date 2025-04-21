@@ -1,6 +1,4 @@
 const express = require('express');
-const { google } = require('googleapis');
-const router = express.Router();
 const PORT = process.env.PORT || 5000;
 const { Pool } = require('pg');
 require('dotenv').config();
@@ -18,6 +16,8 @@ const http = require('http');
 const { Server } = require('ws');
 const { Op } = require('sequelize');
 const { OAuth2Client } = require('google-auth-library');
+const axios = require('axios');
+const { google } = require('googleapis');
 
 const alllowedCORS = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003']
 
@@ -820,177 +820,149 @@ app.get('/user', authenticateJWT, async (req, res) => {
   res.json(req.user)
 })
 
-const CREDENTIALS = {
-  client_id: process.env.GOOGLE_CLIENT_ID,
-  client_secret: process.env.GOOGLE_CLIENT_SECRET,
-  redirect_uri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/calendar/callback'
-};
-
-const oauth2Client = new google.auth.OAuth2(
-  CREDENTIALS.client_id,
-  CREDENTIALS.client_secret,
-  CREDENTIALS.redirect_uri
-);
-
-
-app.get('/auth', (req, res) => {
-  const scopes = ['https://www.googleapis.com/auth/calendar.readonly'];
+app.get('/events/calendar', authenticateJWT, async (req, res) => {
+  const userId = req.user.id;
+  const startDate = req.query.startDate; // format: YYYY-MM-DD
+  const endDate = req.query.endDate; // format: YYYY-MM-DD
   
-  const authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: scopes,
-    include_granted_scopes: true
-  });
-  
-  res.json({ authUrl });
-});
-
-router.get('/callback', async (req, res) => {
-  const { code } = req.query;
-  
-  try {
-    const { tokens } = await oauth2Client.getToken(code);
-    oauth2Client.setCredentials(tokens);
-    
-    req.session.tokens = tokens;
-    res.redirect('/calendar');
-  } catch (error) {
-    console.error('Error getting tokens:', error);
-    res.status(500).json({ error: 'Failed to get tokens' });
+  if (!startDate || !endDate) {
+    return res.status(400).json({ error: 'Start date and end date are required' });
   }
-});
 
-router.get('/events', async (req, res) => {
-  // Retrieve tokens from session or database
-  const tokens = req.session.tokens;
-  
-  if (!tokens) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
-  
-  oauth2Client.setCredentials(tokens);
-  
-  // Calendar IDs to fetch
-  const calendarIds = {
-    primary: 'primary',
-    holidays: 'bg.bulgarian#holiday@group.v.calendar.google.com', // Bulgarian holidays
-    birthdays: 'addressbook#contacts@group.v.calendar.google.com' // Contact birthdays
-  };
-  
   try {
-    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-    
-    // Get date boundaries
-    const now = new Date();
-    const oneYearLater = new Date(now);
-    oneYearLater.setFullYear(now.getFullYear() + 1);
-    
-    // Format for API
-    const timeMin = now.toISOString();
-    const timeMax = oneYearLater.toISOString();
-    
-    // Container for all events
-    const allEvents = {
-      events: [],
-      holidays: [],
-      birthdays: [],
-      other: [],
-      summary: {
-        totalEvents: 0,
-        upcomingEvents: 0,
-        calendarTypes: {}
-      }
+    // Get the user to check for Google credentials
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const result = {
+      googleEvents: [],
+      bulgarianHolidays: []
     };
-    
-    // Process each calendar
-    for (const [calendarType, calendarId] of Object.entries(calendarIds)) {
+
+    // Get Bulgarian holidays
+    try {
+      const holidays = await getBulgarianHolidays(startDate, endDate);
+      result.bulgarianHolidays = holidays;
+    } catch (error) {
+      console.error('Error fetching Bulgarian holidays:', error);
+      // Continue with the request even if holidays fetch fails
+    }
+
+    // Only attempt to get Google Calendar events if the user has Google credentials
+    if (user.googleRefreshToken) {
       try {
-        const response = await calendar.events.list({
-          calendarId,
-          timeMin,
-          timeMax,
-          maxResults: 2500,
-          singleEvents: true,
-          orderBy: 'startTime'
-        });
-        
-        const events = response.data.items || [];
-        
-        // Update summary count
-        allEvents.summary.calendarTypes[calendarType] = events.length;
-        allEvents.summary.totalEvents += events.length;
-        
-        // Process each event
-        events.forEach(event => {
-          const formattedEvent = formatEvent(event, calendarType);
-          
-          // Add to appropriate category
-          if (calendarType === 'primary') {
-            allEvents.events.push(formattedEvent);
-          } else if (calendarType === 'holidays') {
-            allEvents.holidays.push(formattedEvent);
-          } else if (calendarType === 'birthdays') {
-            allEvents.birthdays.push(formattedEvent);
-          } else {
-            allEvents.other.push(formattedEvent);
-          }
-          
-          // Count upcoming events (next 30 days)
-          const eventStartDate = new Date(formattedEvent.start.dateString);
-          const thirtyDaysLater = new Date();
-          thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
-          
-          if (eventStartDate <= thirtyDaysLater) {
-            allEvents.summary.upcomingEvents++;
-          }
-        });
+        const googleEvents = await getGoogleCalendarEvents(user, startDate, endDate);
+        result.googleEvents = googleEvents;
       } catch (error) {
-        console.error(`Error fetching ${calendarType} calendar:`, error);
+        console.error('Error fetching Google Calendar events:', error);
+        // We'll still return the holidays even if Google Calendar fetch fails
       }
     }
-    
-    res.json(allEvents);
-  } catch (error) {
-    console.error('Error fetching calendar events:', error);
-    res.status(500).json({ error: 'Failed to fetch calendar events' });
+
+    res.json(result);
+  } catch (err) {
+    console.error('Error in calendar events endpoint:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Helper function to format event data
-function formatEvent(event, calendarType) {
-  const start = event.start || {};
-  const end = event.end || {};
+// Function to get Bulgarian holidays
+async function getBulgarianHolidays(startDate, endDate) {
+  // Convert dates to just the year for API call
+  const startYear = new Date(startDate).getFullYear();
+  const endYear = new Date(endDate).getFullYear();
+  const years = [];
   
-  // Check if it's an all-day event
-  const isAllDay = Boolean(start.date && !start.dateTime);
+  // Handle cases where date range spans multiple years
+  for (let year = startYear; year <= endYear; year++) {
+    years.push(year);
+  }
   
-  // Format event data
-  return {
-    id: event.id || '',
-    title: event.summary || '(No title)',
-    description: event.description || '',
-    location: event.location || '',
-    calendarType,
-    isAllDay,
-    start: {
-      dateString: start.date || start.dateTime || '',
-      formatted: isAllDay 
-        ? new Date(start.date).toLocaleDateString() 
-        : new Date(start.dateTime).toLocaleString()
-    },
-    end: {
-      dateString: end.date || end.dateTime || ''
-    },
-    attendees: (event.attendees || []).map(attendee => ({
-      email: attendee.email || '',
-      name: attendee.displayName || ''
-    })),
-    status: event.status || '',
-    htmlLink: event.htmlLink || ''
-  };
+  const holidays = [];
+  
+  // For each year in the range, get Bulgarian holidays
+  for (const year of years) {
+    try {
+      // Using the Nager.Date public holiday API as an example
+      // You might want to replace this with a more reliable source or create your own list
+      const response = await axios.get(`https://date.nager.at/api/v3/publicholidays/${year}/BG`);
+      
+      // Filter holidays that fall within our date range
+      const filteredHolidays = response.data.filter(holiday => {
+        const holidayDate = holiday.date;
+        return holidayDate >= startDate && holidayDate <= endDate;
+      });
+      
+      // Transform the data to match our application's format
+      const formattedHolidays = filteredHolidays.map(holiday => ({
+        title: holiday.name,
+        date: holiday.date,
+        isHoliday: true,
+        description: holiday.localName || '',
+        type: 'bulgarianHoliday'
+      }));
+      
+      holidays.push(...formattedHolidays);
+    } catch (error) {
+      console.error(`Error fetching Bulgarian holidays for year ${year}:`, error);
+      // Continue with other years if one fails
+    }
+  }
+  
+  return holidays;
 }
 
-module.exports = router;
+// Function to get Google Calendar events
+async function getGoogleCalendarEvents(user, startDate, endDate) {
+  // Check if user has Google refresh token
+  if (!user.googleRefreshToken) {
+    throw new Error('User does not have Google credentials');
+  }
+  
+  // Create OAuth2 client
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URL
+  );
+  
+  // Set credentials with refresh token
+  oauth2Client.setCredentials({
+    refresh_token: user.googleRefreshToken
+  });
+  
+  // Create Google Calendar API client
+  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+  
+  // Format dates for Google Calendar API
+  const timeMin = new Date(startDate);
+  timeMin.setHours(0, 0, 0, 0);
+  
+  const timeMax = new Date(endDate);
+  timeMax.setHours(23, 59, 59, 999);
+  
+  // Get events from primary calendar
+  const response = await calendar.events.list({
+    calendarId: 'primary',
+    timeMin: timeMin.toISOString(),
+    timeMax: timeMax.toISOString(),
+    singleEvents: true,
+    orderBy: 'startTime'
+  });
+  
+  // Transform Google Calendar events to match our application's format
+  return response.data.items.map(event => ({
+    id: event.id,
+    title: event.summary || 'Untitled Event',
+    description: event.description || '',
+    start: event.start.dateTime || event.start.date,
+    end: event.end.dateTime || event.end.date,
+    location: event.location || '',
+    type: 'googleCalendar'
+  }));
+}
 
 // app.listen(PORT, () => {
 //     console.log(`Server is running on http://localhost:${PORT}`);
