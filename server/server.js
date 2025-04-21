@@ -270,6 +270,10 @@ async function addFriendRequest(ws, data) {
       return ws.send(JSON.stringify({ error: 'User not found.' }));
     }
 
+    if(ws.user.id === recipient.id) {
+      return ws.send(JSON.stringify({ error: "You can't send a friend request to yourself." }))
+    }
+
     if(ws.user.friends.includes(recipient.id)) {
       return ws.send(JSON.stringify({ error: 'User is already your friend.' }))
     }
