@@ -1,4 +1,6 @@
 const express = require('express');
+const { google } = require('googleapis');
+const router = express.Router();
 const PORT = process.env.PORT || 5000;
 const { Pool } = require('pg');
 require('dotenv').config();
@@ -817,6 +819,178 @@ app.post('/events/getRecomendations', authenticateJWT, async (req, res) => {
 app.get('/user', authenticateJWT, async (req, res) => {
   res.json(req.user)
 })
+
+const CREDENTIALS = {
+  client_id: process.env.GOOGLE_CLIENT_ID,
+  client_secret: process.env.GOOGLE_CLIENT_SECRET,
+  redirect_uri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/calendar/callback'
+};
+
+const oauth2Client = new google.auth.OAuth2(
+  CREDENTIALS.client_id,
+  CREDENTIALS.client_secret,
+  CREDENTIALS.redirect_uri
+);
+
+
+app.get('/auth', (req, res) => {
+  const scopes = ['https://www.googleapis.com/auth/calendar.readonly'];
+  
+  const authUrl = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: scopes,
+    include_granted_scopes: true
+  });
+  
+  res.json({ authUrl });
+});
+
+router.get('/callback', async (req, res) => {
+  const { code } = req.query;
+  
+  try {
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+    
+    req.session.tokens = tokens;
+    res.redirect('/calendar');
+  } catch (error) {
+    console.error('Error getting tokens:', error);
+    res.status(500).json({ error: 'Failed to get tokens' });
+  }
+});
+
+router.get('/events', async (req, res) => {
+  // Retrieve tokens from session or database
+  const tokens = req.session.tokens;
+  
+  if (!tokens) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  oauth2Client.setCredentials(tokens);
+  
+  // Calendar IDs to fetch
+  const calendarIds = {
+    primary: 'primary',
+    holidays: 'bg.bulgarian#holiday@group.v.calendar.google.com', // Bulgarian holidays
+    birthdays: 'addressbook#contacts@group.v.calendar.google.com' // Contact birthdays
+  };
+  
+  try {
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+    
+    // Get date boundaries
+    const now = new Date();
+    const oneYearLater = new Date(now);
+    oneYearLater.setFullYear(now.getFullYear() + 1);
+    
+    // Format for API
+    const timeMin = now.toISOString();
+    const timeMax = oneYearLater.toISOString();
+    
+    // Container for all events
+    const allEvents = {
+      events: [],
+      holidays: [],
+      birthdays: [],
+      other: [],
+      summary: {
+        totalEvents: 0,
+        upcomingEvents: 0,
+        calendarTypes: {}
+      }
+    };
+    
+    // Process each calendar
+    for (const [calendarType, calendarId] of Object.entries(calendarIds)) {
+      try {
+        const response = await calendar.events.list({
+          calendarId,
+          timeMin,
+          timeMax,
+          maxResults: 2500,
+          singleEvents: true,
+          orderBy: 'startTime'
+        });
+        
+        const events = response.data.items || [];
+        
+        // Update summary count
+        allEvents.summary.calendarTypes[calendarType] = events.length;
+        allEvents.summary.totalEvents += events.length;
+        
+        // Process each event
+        events.forEach(event => {
+          const formattedEvent = formatEvent(event, calendarType);
+          
+          // Add to appropriate category
+          if (calendarType === 'primary') {
+            allEvents.events.push(formattedEvent);
+          } else if (calendarType === 'holidays') {
+            allEvents.holidays.push(formattedEvent);
+          } else if (calendarType === 'birthdays') {
+            allEvents.birthdays.push(formattedEvent);
+          } else {
+            allEvents.other.push(formattedEvent);
+          }
+          
+          // Count upcoming events (next 30 days)
+          const eventStartDate = new Date(formattedEvent.start.dateString);
+          const thirtyDaysLater = new Date();
+          thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+          
+          if (eventStartDate <= thirtyDaysLater) {
+            allEvents.summary.upcomingEvents++;
+          }
+        });
+      } catch (error) {
+        console.error(`Error fetching ${calendarType} calendar:`, error);
+      }
+    }
+    
+    res.json(allEvents);
+  } catch (error) {
+    console.error('Error fetching calendar events:', error);
+    res.status(500).json({ error: 'Failed to fetch calendar events' });
+  }
+});
+
+// Helper function to format event data
+function formatEvent(event, calendarType) {
+  const start = event.start || {};
+  const end = event.end || {};
+  
+  // Check if it's an all-day event
+  const isAllDay = Boolean(start.date && !start.dateTime);
+  
+  // Format event data
+  return {
+    id: event.id || '',
+    title: event.summary || '(No title)',
+    description: event.description || '',
+    location: event.location || '',
+    calendarType,
+    isAllDay,
+    start: {
+      dateString: start.date || start.dateTime || '',
+      formatted: isAllDay 
+        ? new Date(start.date).toLocaleDateString() 
+        : new Date(start.dateTime).toLocaleString()
+    },
+    end: {
+      dateString: end.date || end.dateTime || ''
+    },
+    attendees: (event.attendees || []).map(attendee => ({
+      email: attendee.email || '',
+      name: attendee.displayName || ''
+    })),
+    status: event.status || '',
+    htmlLink: event.htmlLink || ''
+  };
+}
+
+module.exports = router;
 
 // app.listen(PORT, () => {
 //     console.log(`Server is running on http://localhost:${PORT}`);
