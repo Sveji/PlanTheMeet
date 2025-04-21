@@ -344,11 +344,11 @@ async function acceptFriendRequest(ws, data) {
     await request.save();
 
 
-    await Notification.create({
+    const notification = await Notification.create({
       userId: request.requesterId,
       senderId: request.recipientId,
       type: 'acceptedFriendRequest',
-      message: `${request.recipientId.firstName} ${request.recipientId.familyName} accepted your friend request!`,
+      message: `${requester.firstName} ${requester.familyName} accepted your friend request!`,
     });
 
     await Notification.destroy({
@@ -365,7 +365,7 @@ async function acceptFriendRequest(ws, data) {
           client.send(JSON.stringify({ message: `You accepted the friend request from ${requester.email}` }));
         }
         if (client.user.id === requester.id) {
-          client.send(JSON.stringify({ type: 'notification', message: `${ws.user.email} accepted your friend request` }));
+          client.send(JSON.stringify({ type: 'notification', notification }));
         }
       }
     });
@@ -385,14 +385,19 @@ async function rejectFriendRequest(ws, data) {
       return ws.send(JSON.stringify({ error: 'Invalid or expired request' }));
     }
 
+    const requester = await User.findByPk(request.requesterId);
+    if(!requester) {
+      return ws.send(JSON.stringify({ error: "Couldn't find requester." }))
+    }
+
     request.status = 'rejected';
     await request.save();
 
-    await Notification.create({
+    const notification = await Notification.create({
       userId: request.requesterId,
       senderId: request.recipientId,
       type: 'rejectFriendRequest',
-      message: `${request.recipientId.firstName} ${request.recipientId.familyName} rejected your friend request!`,
+      message: `${requester.firstName} ${requester.familyName} rejected your friend request!`,
     });
 
     await Notification.destroy({
@@ -403,14 +408,14 @@ async function rejectFriendRequest(ws, data) {
       }
     });
 
-    const requester = await User.findByPk(request.requesterId);
+    // const requester = await User.findByPk(request.requesterId);
     wss.clients.forEach(client => {
       if (client.readyState === ws.OPEN) {
         if (client.user.id === ws.user.id) {
           client.send(JSON.stringify({ message: `You rejected the friend request from ${requester.email}` }));
         }
         if (client.user.id === requester.id) {
-          client.send(JSON.stringify({ message: `${ws.user.email} rejected your friend request` }));
+          client.send(JSON.stringify({ type: 'notification', notification }));
         }
       }
     });
