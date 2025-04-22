@@ -53,26 +53,35 @@ const Login = () => {
     const handleGoogleLoginSuccess = async (credentials) => {
         const token = credentials.credential;
         console.log('sending idToken:', token);
+        // const response = await crud({
+        //     url: '/auth/google/token',
+        //     method: 'post',
+        //     body: { token }
+        // })
+
+        // console.log(response)
+
+        // if (response.status == 200) {
+        //     localStorage.setItem('access', response.data.token)
+        //     setAccess(response.data.token)
+        //     navigate('/')
+        // }
+        // const res = await fetch('http://127.0.0.1:5000/auth/google', {
+        //     method: 'POST',
+        //     headers: { 'Content-Type': 'application/json' },
+        //     body: JSON.stringify({ token })
+        // });
+        // const result = await res.json()
+        // console.log(res);
         const response = await crud({
             url: '/auth/google/token',
             method: 'post',
-            body: { token }
+            body: {
+                token
+            }
         })
 
         console.log(response)
-
-        if (response.status == 200) {
-            localStorage.setItem('access', response.data.token)
-            setAccess(response.data.token)
-            navigate('/')
-        }
-        const res = await fetch('http://127.0.0.1:5000/auth/google', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token })
-        });
-        const result = await res.json()
-        console.log(res);
     }
 
     const handleGoogleLoginFailure = async () => {

@@ -3,7 +3,7 @@ import { IoChatbubbleOutline } from "react-icons/io5";
 import { IoClose } from "react-icons/io5";
 
 
-const Friend = ({ color = 'pink', image = pfp, firstName = 'Alek', familyName = 'Palek', chatIcon = false, crossIcon = false, className = '', onClick = () => {} }) => {
+const Friend = ({ color = 'pink', image = pfp, firstName = 'Alek', familyName = 'Palek', chatIcon = false, crossIcon = false, className = '', onClick = () => {}, removeFunc = () => {} }) => {
     return (
         <div onClick={onClick} className={`friend ${color} ${className}`}>
             <div className="user-info">
@@ -22,7 +22,7 @@ const Friend = ({ color = 'pink', image = pfp, firstName = 'Alek', familyName = 
                 {
                     crossIcon &&
                     <div className='icon-container'>
-                        <IoClose className='icon' />
+                        <IoClose onClick={removeFunc} className='icon' />
                     </div>
                 }
             </div>
