@@ -695,6 +695,44 @@ async function markAsRead(ws, data) {
   }
 }
 
+app.get('/events/getEvents', authenticateJWT, async (req, res) => {
+  const month = parseInt(req.query.month)
+  const year = parseInt(req.query.year)
+  if(!month || !year) {
+    res.status(400).json({ error: "Please provide month and year." })
+  }
+
+  const startDate = new Date(year, month, 1)
+  startDate.setHours(0, 0, 0, 0)
+  const endDate = new Date(year, month + 1, 0)
+  endDate.setHours(23, 59, 59, 999)
+  
+  try {
+    const events = await Event.findAll({
+      where: {
+        [Op.or]: [
+          {
+            userId: req.user.id
+          },
+          {
+            conformedUserIds: {
+              [Op.contains]: [req.user.id]
+            }
+          }
+        ],
+        datetime: {
+          [Op.between]: [startDate, endDate]
+        }
+      }
+    })
+
+    res.status(200).json({ events })
+  }
+  catch(err) {
+    res.status(500).json({ error: "Failed to fetch events" })
+  }
+})
+
 app.get('/events/getEvent', authenticateJWT, async (req, res) => {
   res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
   const eventId = req.query.eventId;
