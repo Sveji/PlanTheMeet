@@ -4,6 +4,7 @@ import { DataContext } from "../../context/DataContext"
 import "../MyCalendar/myCalendar.less"
 import FormBox from "./components/FormBox"
 import IMG from "../../img/jake.jpg"
+import RecommendEvent from "./components/RecommendEvent"
 
 
 
@@ -48,7 +49,8 @@ const AddEvent = () => {
                     </p>
                 </div>
                 <div className="events-container">
-                    <img src={IMG} className="img" />
+                    <RecommendEvent />
+
                 </div>
             </div>
         </section >

@@ -231,7 +231,13 @@
     }
 
     .recomendation {
+
+
         display: flex;
+
+
+        flex-direction: column;
+        align-items: center;
 
         padding-bottom: 2.4rem;
         flex-direction: column;
@@ -245,18 +251,86 @@
         box-shadow: 0.6rem 0.6rem 0 0 #000;
 
         .title-container {
+
+
             display: flex;
             padding: 2.4rem 0.7rem;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            text-align: center;
             align-self: stretch;
-            font-size: 3.2rem;
+            border: 1px solid #000;
+            background: var(--green, #B5D68F);
+            border-radius: 1rem 1rem 0 0;
+
 
         }
 
-        .img {
-            width: 100%;
+        .events-container {
+            display: flex;
+            // width: 35rem;
+            flex-direction: column;
+            align-items: center;
+            gap: 4.8rem;
+            flex: 1 0 0;
+            border-radius: 1rem;
 
+            .recommended-event {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 1.6rem;
+                width: 83%;
+                // align-self: stretch;
+                border-radius: 10px;
+
+                .img {
+                    width: 100%;
+                    border-radius: 1rem;
+                    // contain: size;
+
+                }
+
+                .info-box {
+                    display: flex;
+                    padding-bottom: 0.7rem;
+                    flex-direction: column;
+                    align-items: center;
+                    text-align: center;
+                    gap: 2.4rem;
+
+                    .text {
+
+                        display: flex;
+                        flex-direction: column;
+                        align-items: flex-start;
+                        text-align: center;
+                        align-items: center;
+
+                        .title {
+                            font-size: 2rem;
+                        }
+                    }
+
+                    .btn {
+                        width: 100%;
+                        display: flex;
+                        padding: 1rem 2rem;
+                        justify-content: center;
+                        align-items: center;
+                        gap: 1rem;
+                        // align-self: stretch;
+
+                        border-radius: 1rem;
+                        border: 0.2rem solid #000;
+                        background: var(--green, #B5D68F);
+                        box-shadow: 0.4rem 0.4rem 0 0 #000;
+                    }
+                }
+            }
         }
+
+
     }
 }

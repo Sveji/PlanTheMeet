@@ -1,4 +1,6 @@
 import './eventsCard.less';
+// import '../../pages/MyCalendar/myCalendar.less'
+// import '../../globalStyling/components.less'
 import IMG from '../../img/jake.jpg';
 import DuplicateBox from '../DuplicateBox/DuplicateBox';
 
@@ -17,11 +19,10 @@ const EventCard = ({ color = 'orange', event, info = 'info', image = IMG, date =
             <div className='info'>
                 <div><h4>{date}</h4></div>
 
-                {/* <DublicateBox> */}
-                <div className='button'>
-                    <h4>Add to calendar</h4>
-                </div>
-                {/* </DublicateBox> */}
+
+                <DuplicateBox className="duplicate-btn">
+                    <button className="btn">Add to calendar</button>
+                </DuplicateBox>
 
             </div>
         </div>
