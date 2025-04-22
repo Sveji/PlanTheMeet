@@ -850,176 +850,176 @@ app.use(express.json());
  */
 
 
-app.get('/api/events/recommendations', async (req, res) => {
-  try {
-    const date = req.query.date;
-    const locationId = req.query.location || '106013482772674'; // Default to Sofia
+// app.get('/api/events/recommendations', async (req, res) => {
+//   try {
+//     const date = req.query.date;
+//     const locationId = req.query.location || '106013482772674'; // Default to Sofia
 
-    // Validate date format
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
-    }
+//     // Validate date format
+//     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+//       return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
+//     }
 
-    // Create start and end date params (for a full day)
-    const startDate = new Date(`${date}T00:00:00.000Z`);
-    const endDate = new Date(`${date}T23:59:59.999Z`);
+//     // Create start and end date params (for a full day)
+//     const startDate = new Date(`${date}T00:00:00.000Z`);
+//     const endDate = new Date(`${date}T23:59:59.999Z`);
 
-    // Format for Facebook URL
-    const startDateParam = startDate.toISOString();
-    const endDateParam = endDate.toISOString();
+//     // Format for Facebook URL
+//     const startDateParam = startDate.toISOString();
+//     const endDateParam = endDate.toISOString();
 
-    // Construct the Facebook events URL
-    const fbEventsUrl = `https://www.facebook.com/events/?date_filter_option=CUSTOM_DATE_RANGE&discover_tab=CUSTOM&end_date=${endDateParam}&location_id=${locationId}&start_date=${startDateParam}`;
+//     // Construct the Facebook events URL
+//     const fbEventsUrl = `https://www.facebook.com/events/?date_filter_option=CUSTOM_DATE_RANGE&discover_tab=CUSTOM&end_date=${endDateParam}&location_id=${locationId}&start_date=${startDateParam}`;
 
-    console.log(`Scraping events from: ${fbEventsUrl}`);
+//     console.log(`Scraping events from: ${fbEventsUrl}`);
 
-    // Make request to Facebook
-    const response = await axios.get(fbEventsUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml',
-        'Accept-Language': 'en-US,en;q=0.9'
-      }
-    });
+//     // Make request to Facebook
+//     const response = await axios.get(fbEventsUrl, {
+//       headers: {
+//         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+//         'Accept': 'text/html,application/xhtml+xml,application/xml',
+//         'Accept-Language': 'en-US,en;q=0.9'
+//       }
+//     });
 
-    // Parse the HTML
-    const $ = cheerio.load(response.data);
-    const events = [];
+//     // Parse the HTML
+//     const $ = cheerio.load(response.data);
+//     const events = [];
 
-    // Facebook's structure might change, so this selector needs to be updated if it doesn't work
-    $('.x78zum5.xdt5ytf.x1iyjqo2.xs83m0k.x1xzczws').each((i, el) => {
-      try {
-        const eventElement = $(el);
+//     // Facebook's structure might change, so this selector needs to be updated if it doesn't work
+//     $('.x78zum5.xdt5ytf.x1iyjqo2.xs83m0k.x1xzczws').each((i, el) => {
+//       try {
+//         const eventElement = $(el);
         
-        // Extract event details
-        const title = eventElement.find('a[role="link"] > span').first().text().trim();
-        const description = eventElement.find('.x1lliihq').text().trim();
+//         // Extract event details
+//         const title = eventElement.find('a[role="link"] > span').first().text().trim();
+//         const description = eventElement.find('.x1lliihq').text().trim();
         
-        // Extract image URL if available
-        const imageEl = eventElement.find('img');
-        const image = imageEl.length ? imageEl.attr('src') : null;
+//         // Extract image URL if available
+//         const imageEl = eventElement.find('img');
+//         const image = imageEl.length ? imageEl.attr('src') : null;
         
-        // Extract link
-        const linkEl = eventElement.find('a[role="link"]');
-        const link = linkEl.length ? 'https://facebook.com' + linkEl.attr('href') : null;
+//         // Extract link
+//         const linkEl = eventElement.find('a[role="link"]');
+//         const link = linkEl.length ? 'https://facebook.com' + linkEl.attr('href') : null;
         
-        // Extract time and location if available
-        const timeLocationEl = eventElement.find('.x1e56ztr');
-        let time = '';
-        let location = '';
+//         // Extract time and location if available
+//         const timeLocationEl = eventElement.find('.x1e56ztr');
+//         let time = '';
+//         let location = '';
         
-        if (timeLocationEl.length) {
-          const timeLocationText = timeLocationEl.text();
-          const parts = timeLocationText.split('·');
-          time = parts[0] ? parts[0].trim() : '';
-          location = parts[1] ? parts[1].trim() : '';
-        }
+//         if (timeLocationEl.length) {
+//           const timeLocationText = timeLocationEl.text();
+//           const parts = timeLocationText.split('·');
+//           time = parts[0] ? parts[0].trim() : '';
+//           location = parts[1] ? parts[1].trim() : '';
+//         }
         
-        // Only add events with titles
-        if (title) {
-          events.push({
-            title,
-            description,
-            link,
-            image,
-            time,
-            location
-          });
-        }
-      } catch (err) {
-        console.error('Error parsing event:', err);
-      }
-    });
+//         // Only add events with titles
+//         if (title) {
+//           events.push({
+//             title,
+//             description,
+//             link,
+//             image,
+//             time,
+//             location
+//           });
+//         }
+//       } catch (err) {
+//         console.error('Error parsing event:', err);
+//       }
+//     });
 
-    // If no events were found with the primary selector, try an alternative
-    if (events.length === 0) {
-      console.log('Trying alternative selectors...');
+//     // If no events were found with the primary selector, try an alternative
+//     if (events.length === 0) {
+//       console.log('Trying alternative selectors...');
       
-      // Try another common pattern for events
-      $('.x1yztbdb').each((i, el) => {
-        try {
-          const eventElement = $(el);
-          const title = eventElement.find('h2, h3').first().text().trim();
-          const description = eventElement.find('p').text().trim();
-          const image = eventElement.find('img').attr('src');
-          const link = eventElement.find('a').attr('href');
+//       // Try another common pattern for events
+//       $('.x1yztbdb').each((i, el) => {
+//         try {
+//           const eventElement = $(el);
+//           const title = eventElement.find('h2, h3').first().text().trim();
+//           const description = eventElement.find('p').text().trim();
+//           const image = eventElement.find('img').attr('src');
+//           const link = eventElement.find('a').attr('href');
           
-          if (title) {
-            events.push({
-              title,
-              description,
-              link: link ? 'https://facebook.com' + link : null,
-              image,
-              time: '',
-              location: ''
-            });
-          }
-        } catch (err) {
-          console.error('Error parsing event with alternative selector:', err);
-        }
-      });
-    }
+//           if (title) {
+//             events.push({
+//               title,
+//               description,
+//               link: link ? 'https://facebook.com' + link : null,
+//               image,
+//               time: '',
+//               location: ''
+//             });
+//           }
+//         } catch (err) {
+//           console.error('Error parsing event with alternative selector:', err);
+//         }
+//       });
+//     }
 
-    // Fallback error handling - Facebook might be serving a different page structure
-    // or requiring authentication
-    if (events.length === 0) {
-      // For development purposes, return some mock data
-      console.log('No events found. Returning mock data for development.');
-      return res.json([
-        {
-          title: 'Summer Festival',
-          description: 'Annual summer festival with live music and performances',
-          link: 'https://facebook.com/events/123456',
-          image: 'https://example.com/summer-festival.jpg',
-          time: `${date} at 7:00 PM`,
-          location: 'City Center Park'
-        },
-        {
-          title: 'Tech Meetup',
-          description: 'Network with local developers and tech enthusiasts',
-          link: 'https://facebook.com/events/654321',
-          image: 'https://example.com/tech-meetup.jpg',
-          time: `${date} at 6:30 PM`,
-          location: 'Innovation Hub'
-        },
-        {
-          title: 'Food & Wine Tasting',
-          description: 'Sample dishes from local restaurants paired with wines',
-          link: 'https://facebook.com/events/789012',
-          image: 'https://example.com/food-wine.jpg',
-          time: `${date} at 8:00 PM`,
-          location: 'Downtown Food Hall'
-        }
-      ]);
-    }
+//     // Fallback error handling - Facebook might be serving a different page structure
+//     // or requiring authentication
+//     if (events.length === 0) {
+//       // For development purposes, return some mock data
+//       console.log('No events found. Returning mock data for development.');
+//       return res.json([
+//         {
+//           title: 'Summer Festival',
+//           description: 'Annual summer festival with live music and performances',
+//           link: 'https://facebook.com/events/123456',
+//           image: 'https://example.com/summer-festival.jpg',
+//           time: `${date} at 7:00 PM`,
+//           location: 'City Center Park'
+//         },
+//         {
+//           title: 'Tech Meetup',
+//           description: 'Network with local developers and tech enthusiasts',
+//           link: 'https://facebook.com/events/654321',
+//           image: 'https://example.com/tech-meetup.jpg',
+//           time: `${date} at 6:30 PM`,
+//           location: 'Innovation Hub'
+//         },
+//         {
+//           title: 'Food & Wine Tasting',
+//           description: 'Sample dishes from local restaurants paired with wines',
+//           link: 'https://facebook.com/events/789012',
+//           image: 'https://example.com/food-wine.jpg',
+//           time: `${date} at 8:00 PM`,
+//           location: 'Downtown Food Hall'
+//         }
+//       ]);
+//     }
 
-    res.json(events);
-  } catch (error) {
-    console.error('Error scraping Facebook events:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch events',
-      message: error.message,
-      fallback: [
-        {
-          title: 'Community Workshop',
-          description: 'Learn new skills in this hands-on workshop',
-          link: 'https://facebook.com/events/mock1',
-          image: 'https://example.com/workshop.jpg',
-          time: `${req.query.date} at 5:00 PM`,
-          location: 'Community Center'
-        },
-        {
-          title: 'Movie Night',
-          description: 'Outdoor screening of classic films',
-          link: 'https://facebook.com/events/mock2',
-          image: 'https://example.com/movie.jpg',
-          time: `${req.query.date} at 9:00 PM`,
-          location: 'Riverside Park'
-        }
-      ]
-    });
-  }
-});
+//     res.json(events);
+//   } catch (error) {
+//     console.error('Error scraping Facebook events:', error);
+//     res.status(500).json({ 
+//       error: 'Failed to fetch events',
+//       message: error.message,
+//       fallback: [
+//         {
+//           title: 'Community Workshop',
+//           description: 'Learn new skills in this hands-on workshop',
+//           link: 'https://facebook.com/events/mock1',
+//           image: 'https://example.com/workshop.jpg',
+//           time: `${req.query.date} at 5:00 PM`,
+//           location: 'Community Center'
+//         },
+//         {
+//           title: 'Movie Night',
+//           description: 'Outdoor screening of classic films',
+//           link: 'https://facebook.com/events/mock2',
+//           image: 'https://example.com/movie.jpg',
+//           time: `${req.query.date} at 9:00 PM`,
+//           location: 'Riverside Park'
+//         }
+//       ]
+//     });
+//   }
+// });
 // app.listen(PORT, () => {
 //     console.log(`Server is running on http://localhost:${PORT}`);
 // });
