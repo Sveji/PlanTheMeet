@@ -244,22 +244,6 @@ app.get('/calendars', (req, res) => {
 });
 
 
-function verifyToken(req, res, next) {
-  const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
-
-  if (!token) {
-    return res.status(403).send("❌ No token provided");
-  }
-
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(403).send("❌ Invalid or expired token");
-    }
-    req.user = decoded;
-    next();
-  });
-}
-
 app.get("/add-event", async (req, res) => {
   const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
@@ -269,10 +253,10 @@ app.get("/add-event", async (req, res) => {
       summary: "This is a test event",
       description: "Blaaaaaahhhhhhhhhh",
       start: {
-        dateTime: "2025-04-23 15:48:00+03"
+        dateTime: "2025-04-23T15:48:00+03:00"
       },
       end: {
-        dateTime: "2025-04-24 15:48:00+03"
+        dateTime: "2025-04-24T15:48:00+03:00"
       }
     }
   })
@@ -298,59 +282,6 @@ function verifyToken(req, res, next) {
     next();
   });
 }
-
-function verifyToken(req, res, next) {
-  const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
-
-  if (!token) {
-    return res.status(403).send("❌ No token provided");
-  }
-
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(403).send("❌ Invalid or expired token");
-    }
-    req.user = decoded;
-    next();
-  });
-}
-
-app.get("/add-event", verifyToken, async (req, res) => {
-  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-
-  if (req.user && req.user.access_token) {
-    oauth2Client.setCredentials({
-      access_token: req.user.access_token,
-      refresh_token: req.user.refresh_token,
-    });
-
-    try {
-      await calendar.events.insert({
-        calendarId: "primary",
-        requestBody: {
-          summary: "This is a test event",
-          description: "Blaaaaaahhhhhhhhhh",
-          start: {
-            dateTime: "2025-04-23T15:48:00+03:00"
-          },
-          end: {
-            dateTime: "2025-04-24T15:48:00+03:00"
-          }
-        }
-      });
-
-      res.send({
-        msg: "✅ Event created successfully",
-      });
-    } catch (err) {
-      console.error('Error creating event:', err);
-      res.status(500).send('❌ Failed to create event');
-    }
-  } else {
-    res.status(403).send("❌ No valid access token found in JWT");
-  }
-});
-
 
 
 
