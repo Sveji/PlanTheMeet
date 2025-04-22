@@ -357,26 +357,43 @@ app.get('/all-events', async (req, res) => {
 
 
 
-app.get("/add-event", async (req, res) => {
+app.post("/add-event", async (req, res) => {
+  const {
+    summary,
+    description,
+    start,
+    end } = req.body
+
+  if (!summary || !description || !start || !end) {
+    returnres.status(400).send({ error: "Missing requirement fields" })
+  }
+
   const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-
-  await calendar.events.insert({
-    calendarId: "primary",
-    requestBody: {
-      summary: "This is a test event",
-      description: "Blaaaaaahhhhhhhhhh",
-      start: {
-        dateTime: "2025-04-23T15:48:00+03:00"
-      },
-      end: {
-        dateTime: "2025-04-24T15:48:00+03:00"
+  try {
+    await calendar.events.insert({
+      calendarId: "primary",
+      requestBody: {
+        summary,
+        description,
+        start: {
+          dateTime: start,
+        },
+        end: {
+          dateTime: end,
+        }
       }
-    }
-  })
+    })
 
-  res.send({
-    msg: "Done",
-  })
+    res.send({
+      msg: "Event created successfully",
+    })
+  } catch (error) {
+    res.status(500).send({
+      error: "An error occurred while creating the event",
+      details: error.message,
+    })
+  }
+
 })
 
 app.get('/events/getEvents', authenticateJWT, async (req, res) => {
@@ -1252,31 +1269,31 @@ app.use(express.json());
 //     $('.x78zum5.xdt5ytf.x1iyjqo2.xs83m0k.x1xzczws').each((i, el) => {
 //       try {
 //         const eventElement = $(el);
-        
+
 //         // Extract event details
 //         const title = eventElement.find('a[role="link"] > span').first().text().trim();
 //         const description = eventElement.find('.x1lliihq').text().trim();
-        
+
 //         // Extract image URL if available
 //         const imageEl = eventElement.find('img');
 //         const image = imageEl.length ? imageEl.attr('src') : null;
-        
+
 //         // Extract link
 //         const linkEl = eventElement.find('a[role="link"]');
 //         const link = linkEl.length ? 'https://facebook.com' + linkEl.attr('href') : null;
-        
+
 //         // Extract time and location if available
 //         const timeLocationEl = eventElement.find('.x1e56ztr');
 //         let time = '';
 //         let location = '';
-        
+
 //         if (timeLocationEl.length) {
 //           const timeLocationText = timeLocationEl.text();
 //           const parts = timeLocationText.split('·');
 //           time = parts[0] ? parts[0].trim() : '';
 //           location = parts[1] ? parts[1].trim() : '';
 //         }
-        
+
 //         // Only add events with titles
 //         if (title) {
 //           events.push({
@@ -1296,7 +1313,7 @@ app.use(express.json());
 //     // If no events were found with the primary selector, try an alternative
 //     if (events.length === 0) {
 //       console.log('Trying alternative selectors...');
-      
+
 //       // Try another common pattern for events
 //       $('.x1yztbdb').each((i, el) => {
 //         try {
@@ -1305,7 +1322,7 @@ app.use(express.json());
 //           const description = eventElement.find('p').text().trim();
 //           const image = eventElement.find('img').attr('src');
 //           const link = eventElement.find('a').attr('href');
-          
+
 //           if (title) {
 //             events.push({
 //               title,
