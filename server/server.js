@@ -15,9 +15,10 @@ require('./auth/google');
 const http = require('http');
 const { Server } = require('ws');
 const { Op, where } = require('sequelize');
-const { OAuth2Client } = require('google-auth-library');
+const { OAuth2Client, auth } = require('google-auth-library');
 const axios = require('axios');
 const { google } = require('googleapis');
+const { oauth2Client } = require('./auth/google');
 
 const alllowedCORS = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003']
 
@@ -296,7 +297,7 @@ async function addFriendRequest(ws, data) {
       status: 'pending',
     });
 
-    await Notification.create({
+    const notification = await Notification.create({
       userId: recipient.id,
       senderId: ws.user.id,
       data: { requestId: friendRequest.id },
@@ -307,7 +308,8 @@ async function addFriendRequest(ws, data) {
     wss.clients.forEach(client => {
       if (client.readyState === ws.OPEN && client.user && client.user.id === recipient.id) {
         client.send(JSON.stringify({
-          message: `You have a new friend request from ${ws.user.email}`,
+          type: 'notification',
+          notification,
           requestId: friendRequest.id,
         }));
       }
@@ -769,7 +771,10 @@ app.get('/getFriends', authenticateJWT, async (req, res) => {
       where: {
         id: friendIds,
         ...(searchQuery && {
-          username: { [Op.iLike]: `%${searchQuery}%` },
+          [Op.or]: [
+            { firstName: { [Op.iLike]: `%${searchQuery}%` } },
+            { familyName: { [Op.iLike]: `%${searchQuery}%` } }
+          ]
         }),
       },
       attributes: ['id', 'firstName', 'familyName', 'photo'],
