@@ -3,6 +3,7 @@ import './event.less'
 import { DataContext } from "../../context/DataContext"
 import "../MyCalendar/myCalendar.less"
 import FormBox from "./components/FormBox"
+import IMG from "../../img/jake.jpg"
 
 
 
@@ -37,11 +38,19 @@ const AddEvent = () => {
                 </div>
 
                 <FormBox />
-
-
-
             </div >
 
+            <div className="recomendation">
+                <div className="title-container">
+                    <h3>You might also like...</h3>
+                    <p>
+                        Here's some events for {date.getDate() < 10 ? `0${date.getDate()}` : `${date.getDate()}`}.{date.getMonth() + 1 < 10 ? `0${date.getMonth() + 1}` : `${date.getMonth() + 1}`}.{date.getFullYear()} in Sofia that you should consider.
+                    </p>
+                </div>
+                <div className="events-container">
+                    <img src={IMG} className="img" />
+                </div>
+            </div>
         </section >
     )
 }
