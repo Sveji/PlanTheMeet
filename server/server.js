@@ -18,12 +18,13 @@ const { Op, where } = require('sequelize');
 const { OAuth2Client, auth } = require('google-auth-library');
 const axios = require('axios');
 const { google } = require('googleapis');
-// const { oauth2Client } = require('./auth/google');
-
+const cheerio = require('cheerio');
 const alllowedCORS = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003']
 
 const oauth2Client = new google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECR)
 
+
+//AUTHENTICATION
 sequelize.authenticate()
   .then(() => console.log('Database connection established successfully'))
   .catch(err => console.error('Unable to connect to the database:', err));
@@ -122,32 +123,6 @@ app.post('/auth/register', async (req, res) => {
   }
 });
 
-// app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-
-// app.get('/auth/google/callback', (req, res, next) => {
-//     passport.authenticate('google', { session: false }, (err, user, info) => {
-//       if (err || !user) {
-//         console.log('Hit with err:', err)
-//         return res.status(401).json({ message: 'Authentication failed', error: err });
-//       }
-//       const token = jwt.sign(
-//         {
-//           id: user.id,
-//           email: user.email
-//         },
-//         process.env.JWT_SECRET,
-//         { expiresIn: '1h' }
-//       );
-//       console.log(token)
-
-//       return res.json({ token, user });
-//     })(req, res, next);
-// });
-
-// app.post('/auth/google/token', async (req, res) => {
-//   const { token } = req.body;
-//   const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
 //   try {
 //     const ticket = await client.verifyIdToken({
 //       idToken: token,
@@ -188,35 +163,8 @@ app.post('/auth/register', async (req, res) => {
 // });
 
 
-//SASHI
-// app.get('/', (req, res) => {
-//   const url = oauth2Client.generateAuthUrl({
-//     access_type: "offline",
-//     scope: 'https://www.googleapis.com/auth/calendar',
-//     prompt: "consent"
-//   })
-//   res.redirect(url)
-// })
 
-
-// app.get('/', async (req, res) => {
-//   const code = req.query.code
-//   oauth2Client.getToken(code, (err, tokens) => {
-//     if (err) {
-//       console.error('Couldnt get tokens', err)
-//       res.send("Error")
-//       return
-//     }
-//     oauth2Client.setCredentials(tokens)
-//     res.send("Successfully logged in")
-//   })
-// });
-
-
-
-
-
-
+//GOOGLE LOGIN
 app.get('/', async (req, res) => {
   const code = req.query.code;
 
@@ -224,7 +172,11 @@ app.get('/', async (req, res) => {
 
     const url = oauth2Client.generateAuthUrl({
       access_type: "offline",
-      scope: 'https://www.googleapis.com/auth/calendar',
+      scope: [
+        'https://www.googleapis.com/auth/calendar',
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/userinfo.email'
+      ].join(' '),
       prompt: "consent"
     });
     return res.redirect(url);
@@ -234,12 +186,266 @@ app.get('/', async (req, res) => {
   try {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
-    res.send("✅ Successfully authenticated with Google Calendar!");
+
+    const { data: profile } = await oauth2Client.request({
+      url: 'https://www.googleapis.com/oauth2/v3/userinfo',
+    });
+
+    const [user, created] = await User.findOrCreate({
+      where: { email: profile.email },
+      defaults: {
+        googleId: profile.sub,
+        firstName: profile.given_name,
+        familyName: profile.family_name,
+        email: profile.email,
+        photo: profile.picture,
+        password: null
+      }
+    });
+
+    const jwtToken = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({
+      message: "✅ Successfully authenticated!",
+      token: jwtToken,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        familyName: user.familyName,
+        email: user.email,
+        photo: user.photo
+      }
+    });
   } catch (err) {
     console.error('Error getting tokens:', err);
-    res.send("❌ Error during authentication.");
+    res.send("Error during authentication.");
   }
 });
+
+app.post('/auth/google', async (req, res) => {
+  const { code } = req.body;
+
+  try {
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+
+    const { data: profile } = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` }
+    });
+
+    const [user, created] = await User.findOrCreate({
+      where: { email: profile.email },
+      defaults: {
+        googleId: profile.sub,
+        firstName: profile.given_name,
+        familyName: profile.family_name,
+        email: profile.email,
+        photo: profile.picture,
+        password: null
+      }
+    });
+
+    const jwtToken = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({
+      token: jwtToken,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        email: user.email,
+        photo: user.photo
+      }
+    });
+
+  } catch (err) {
+    console.error("Google Auth Error:", err);
+    res.status(500).json({ error: "Google login failed" });
+  }
+});
+
+// app.get('/', async (req, res) => {
+//   const code = req.query.code;
+
+//   if (!code) {
+//     const url = oauth2Client.generateAuthUrl({
+//       access_type: "offline",
+//       scope: 'https://www.googleapis.com/auth/calendar',
+//       prompt: "consent"
+//     });
+//     return res.redirect(url);
+//   }
+
+//   try {
+//     const { tokens } = await oauth2Client.getToken(code);
+//     oauth2Client.setCredentials(tokens);
+
+
+//     console.log('Tokens received:', tokens);
+
+//     const payload = {
+//       email: tokens.email,
+//       access_token: tokens.access_token,
+//       refresh_token: tokens.refresh_token
+//     };
+
+//     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+
+//     res.json({
+//       message: "✅ Successfully authenticated with Google Calendar!",
+//       token: token
+//     });
+//   } catch (err) {
+//     console.error('Error getting tokens:', err);
+//     res.send("❌ Error during authentication. Please try again.");
+//   }
+// });
+
+
+app.get('/calendars', (req, res) => {
+  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+  calendar.calendarList.list({}, (err, result) => {
+    if (err) {
+      console.error('Error fetching calendar list', err);
+      return res.send('Error fetching calendars');
+    }
+
+    const calendars = result.data.items.map(cal => ({
+      id: cal.id,
+      summary: cal.summary,
+    }));
+
+    res.json(calendars);
+  });
+});
+
+app.get('/all-events', async (req, res) => {
+  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+  try {
+    const list = await calendar.calendarList.list();
+    const calendars = list.data.items;
+
+    const eventsPromises = calendars.map(cal =>
+      calendar.events.list({
+        calendarId: cal.id,
+        timeMin: new Date().toISOString(),
+        maxResults: 15,
+        singleEvents: true,
+        orderBy: 'startTime'
+      }).then(res => ({
+        calendar: cal.summary,
+        events: res.data.items
+      }))
+    );
+
+    const allEvents = await Promise.all(eventsPromises);
+    res.json(allEvents);
+  } catch (err) {
+    console.error('Error fetching events', err);
+    res.send('Error loading events');
+  }
+});
+
+
+
+app.post("/add-event", async (req, res) => {
+  const {
+    summary,
+    description,
+    start,
+    end } = req.body
+
+  if (!summary || !description || !start || !end) {
+    returnres.status(400).send({ error: "Missing requirement fields" })
+  }
+
+  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+  try {
+    await calendar.events.insert({
+      calendarId: "primary",
+      requestBody: {
+        summary,
+        description,
+        start: {
+          dateTime: start,
+        },
+        end: {
+          dateTime: end,
+        }
+      }
+    })
+
+    res.send({
+      msg: "Event created successfully",
+    })
+  } catch (error) {
+    res.status(500).send({
+      error: "An error occurred while creating the event",
+      details: error.message,
+    })
+  }
+
+})
+
+app.get('/events/getEvents', authenticateJWT, async (req, res) => {
+  const month = parseInt(req.query.month);
+  const year = parseInt(req.query.year);
+
+  if (!month || !year) {
+    return res.status(400).json({ error: "Please provide both month and year." });
+  }
+
+  const startDate = new Date(year, month - 1, 1); // month is 0-indexed
+  startDate.setHours(0, 0, 0, 0);
+
+  const endDate = new Date(year, month, 0); // last day of month
+  endDate.setHours(23, 59, 59, 999);
+
+  try {
+    const events = await Event.findAll({
+      where: {
+        startTime: {
+          [Op.between]: [startDate, endDate]
+        }
+      }
+    });
+
+    res.status(200).json({ events });
+  } catch (err) {
+    console.error("❌ Error fetching events:", err);
+    res.status(500).json({ error: "Failed to fetch events" });
+  }
+});
+
+
+
+
+
+function verifyToken(req, res, next) {
+  const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
+
+  if (!token) {
+    return res.status(403).send("❌ No token provided");
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).send("❌ Invalid or expired token");
+    }
+    req.user = decoded;
+    next();
+  });
+}
+
 
 
 
@@ -760,7 +966,7 @@ app.get('/events/getEvents', authenticateJWT, async (req, res) => {
   const day = parseInt(req.query.day)
   const month = parseInt(req.query.month)
   const year = parseInt(req.query.year)
-  if(!month || !year) {
+  if (!month || !year) {
     res.status(400).json({ error: "Please provide month and year." })
   }
 
@@ -769,11 +975,6 @@ app.get('/events/getEvents', authenticateJWT, async (req, res) => {
   let endDate = new Date(year, month + 1, 0)
   endDate.setHours(23, 59, 59, 999)
 
-  if(day) {
-    startDate.setDate(day)
-    endDate.setDate(day)
-  }
-  
   try {
     const events = await Event.findAll({
       where: {
@@ -795,7 +996,7 @@ app.get('/events/getEvents', authenticateJWT, async (req, res) => {
 
     res.status(200).json({ events })
   }
-  catch(err) {
+  catch (err) {
     res.status(500).json({ error: "Failed to fetch events" })
   }
 })
@@ -1007,6 +1208,196 @@ app.get('/events', (req, res) => {
 
 
 
+
+// Enable CORS for the React frontend
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
+
+app.use(express.json());
+
+/**
+ * Facebook Events Scraper Endpoint
+ * GET /api/events/recommendations
+ * 
+ * Scrapes Facebook events for a given date
+ * Query params:
+ *   - date: YYYY-MM-DD format
+ *   - location: optional location ID (defaults to Sofia, Bulgaria ID: 106013482772674)
+ */
+
+
+// app.get('/api/events/recommendations', async (req, res) => {
+//   try {
+//     const date = req.query.date;
+//     const locationId = req.query.location || '106013482772674'; // Default to Sofia
+
+//     // Validate date format
+//     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+//       return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
+//     }
+
+//     // Create start and end date params (for a full day)
+//     const startDate = new Date(`${date}T00:00:00.000Z`);
+//     const endDate = new Date(`${date}T23:59:59.999Z`);
+
+//     // Format for Facebook URL
+//     const startDateParam = startDate.toISOString();
+//     const endDateParam = endDate.toISOString();
+
+//     // Construct the Facebook events URL
+//     const fbEventsUrl = `https://www.facebook.com/events/?date_filter_option=CUSTOM_DATE_RANGE&discover_tab=CUSTOM&end_date=${endDateParam}&location_id=${locationId}&start_date=${startDateParam}`;
+
+//     console.log(`Scraping events from: ${fbEventsUrl}`);
+
+//     // Make request to Facebook
+//     const response = await axios.get(fbEventsUrl, {
+//       headers: {
+//         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+//         'Accept': 'text/html,application/xhtml+xml,application/xml',
+//         'Accept-Language': 'en-US,en;q=0.9'
+//       }
+//     });
+
+//     // Parse the HTML
+//     const $ = cheerio.load(response.data);
+//     const events = [];
+
+//     // Facebook's structure might change, so this selector needs to be updated if it doesn't work
+//     $('.x78zum5.xdt5ytf.x1iyjqo2.xs83m0k.x1xzczws').each((i, el) => {
+//       try {
+//         const eventElement = $(el);
+
+//         // Extract event details
+//         const title = eventElement.find('a[role="link"] > span').first().text().trim();
+//         const description = eventElement.find('.x1lliihq').text().trim();
+
+//         // Extract image URL if available
+//         const imageEl = eventElement.find('img');
+//         const image = imageEl.length ? imageEl.attr('src') : null;
+
+//         // Extract link
+//         const linkEl = eventElement.find('a[role="link"]');
+//         const link = linkEl.length ? 'https://facebook.com' + linkEl.attr('href') : null;
+
+//         // Extract time and location if available
+//         const timeLocationEl = eventElement.find('.x1e56ztr');
+//         let time = '';
+//         let location = '';
+
+//         if (timeLocationEl.length) {
+//           const timeLocationText = timeLocationEl.text();
+//           const parts = timeLocationText.split('·');
+//           time = parts[0] ? parts[0].trim() : '';
+//           location = parts[1] ? parts[1].trim() : '';
+//         }
+
+//         // Only add events with titles
+//         if (title) {
+//           events.push({
+//             title,
+//             description,
+//             link,
+//             image,
+//             time,
+//             location
+//           });
+//         }
+//       } catch (err) {
+//         console.error('Error parsing event:', err);
+//       }
+//     });
+
+//     // If no events were found with the primary selector, try an alternative
+//     if (events.length === 0) {
+//       console.log('Trying alternative selectors...');
+
+//       // Try another common pattern for events
+//       $('.x1yztbdb').each((i, el) => {
+//         try {
+//           const eventElement = $(el);
+//           const title = eventElement.find('h2, h3').first().text().trim();
+//           const description = eventElement.find('p').text().trim();
+//           const image = eventElement.find('img').attr('src');
+//           const link = eventElement.find('a').attr('href');
+
+//           if (title) {
+//             events.push({
+//               title,
+//               description,
+//               link: link ? 'https://facebook.com' + link : null,
+//               image,
+//               time: '',
+//               location: ''
+//             });
+//           }
+//         } catch (err) {
+//           console.error('Error parsing event with alternative selector:', err);
+//         }
+//       });
+//     }
+
+//     // Fallback error handling - Facebook might be serving a different page structure
+//     // or requiring authentication
+//     if (events.length === 0) {
+//       // For development purposes, return some mock data
+//       console.log('No events found. Returning mock data for development.');
+//       return res.json([
+//         {
+//           title: 'Summer Festival',
+//           description: 'Annual summer festival with live music and performances',
+//           link: 'https://facebook.com/events/123456',
+//           image: 'https://example.com/summer-festival.jpg',
+//           time: `${date} at 7:00 PM`,
+//           location: 'City Center Park'
+//         },
+//         {
+//           title: 'Tech Meetup',
+//           description: 'Network with local developers and tech enthusiasts',
+//           link: 'https://facebook.com/events/654321',
+//           image: 'https://example.com/tech-meetup.jpg',
+//           time: `${date} at 6:30 PM`,
+//           location: 'Innovation Hub'
+//         },
+//         {
+//           title: 'Food & Wine Tasting',
+//           description: 'Sample dishes from local restaurants paired with wines',
+//           link: 'https://facebook.com/events/789012',
+//           image: 'https://example.com/food-wine.jpg',
+//           time: `${date} at 8:00 PM`,
+//           location: 'Downtown Food Hall'
+//         }
+//       ]);
+//     }
+
+//     res.json(events);
+//   } catch (error) {
+//     console.error('Error scraping Facebook events:', error);
+//     res.status(500).json({ 
+//       error: 'Failed to fetch events',
+//       message: error.message,
+//       fallback: [
+//         {
+//           title: 'Community Workshop',
+//           description: 'Learn new skills in this hands-on workshop',
+//           link: 'https://facebook.com/events/mock1',
+//           image: 'https://example.com/workshop.jpg',
+//           time: `${req.query.date} at 5:00 PM`,
+//           location: 'Community Center'
+//         },
+//         {
+//           title: 'Movie Night',
+//           description: 'Outdoor screening of classic films',
+//           link: 'https://facebook.com/events/mock2',
+//           image: 'https://example.com/movie.jpg',
+//           time: `${req.query.date} at 9:00 PM`,
+//           location: 'Riverside Park'
+//         }
+//       ]
+//     });
+//   }
+// });
 // app.listen(PORT, () => {
 //     console.log(`Server is running on http://localhost:${PORT}`);
 // });

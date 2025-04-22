@@ -2,7 +2,7 @@ import axios from "axios";
 import { createContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-export const DataContext = createContext({ })
+export const DataContext = createContext({})
 
 const DataProvider = ({ children }) => {
     // Sends the user to a different page
@@ -49,11 +49,11 @@ const DataProvider = ({ children }) => {
                 response = await axios[method](url, body, config);
             }
 
-            if(response.status == 401) handleLogOut()
+            if (response.status == 401) handleLogOut()
 
-            if(response) return response
-        } catch(err) {
-            if(err.status == 401) handleLogOut()
+            if (response) return response
+        } catch (err) {
+            if (err.status == 401) handleLogOut()
 
             return err
         }
@@ -68,10 +68,10 @@ const DataProvider = ({ children }) => {
 
     // Checks which season the given month is in
     const getSeason = (month) => {
-        if(month >= 2 && month <= 4) return 'spring'
-        if(month >= 5 && month <= 7) return 'summer'
-        if(month >= 8 && month <= 10) return 'autumn'
-        if(month == 11 || month == 0 || month == 1) return 'winter'
+        if (month >= 2 && month <= 4) return 'spring'
+        if (month >= 5 && month <= 7) return 'summer'
+        if (month >= 8 && month <= 10) return 'autumn'
+        if (month == 11 || month == 0 || month == 1) return 'winter'
     }
 
 
@@ -88,7 +88,7 @@ const DataProvider = ({ children }) => {
     const socketRef = useRef(null)
 
     useEffect(() => {
-        if(access) {
+        if (access) {
             socketRef.current = new WebSocket('ws://localhost:5000/')
 
             socketRef.current.onopen = () => {
@@ -102,13 +102,13 @@ const DataProvider = ({ children }) => {
             socketRef.current.onmessage = (data) => {
                 console.log(data)
 
-                if(data.type === 'message') {
+                if (data.type === 'message') {
                     const parsedData = JSON.parse(data.data)
                     console.log(parsedData)
-                    if(parsedData.type === "notifications") {
+                    if (parsedData.type === "notifications") {
                         setNotifications(parsedData.notifications)
                     }
-                    if(parsedData.type === "notification") {
+                    if (parsedData.type === "notification") {
                         const newNotifications = [
                             parsedData.notification,
                             ...notifications
@@ -116,15 +116,15 @@ const DataProvider = ({ children }) => {
                         console.log(newNotifications)
                         setNotifications(newNotifications)
                     }
-                    if(parsedData.type === "notificationRemoved") {
+                    if (parsedData.type === "notificationRemoved") {
                         const newNotifications = notifications.filter(notification => notification.id !== parsedData.notificationId)
                         setNotifications(newNotifications)
                     }
-                    if(parsedData.type === 'acceptFriendSuccess' || parsedData.type === 'rejectFriendSuccess') {
+                    if (parsedData.type === 'acceptFriendSuccess' || parsedData.type === 'rejectFriendSuccess') {
                         const newNotifications = notifications.filter(notification => notification.type !== 'friendRequest' || (notification.type === 'friendRequest' && notification.data.requestId !== parsedData.requestId))
                         setNotifications(newNotifications)
                     }
-                    if(parsedData.type === 'friendReqError') {
+                    if (parsedData.type === 'friendReqError') {
                         setFriendReqError(parsedData.error)
                     }
                 }
@@ -190,9 +190,10 @@ const DataProvider = ({ children }) => {
             getFriendColor,
             notifications,
             friendReqError,
-            selectedFriends, setSelectedFriends
+            selectedFriends, setSelectedFriends,
+            handleLogOut
         }}>
-            { children }
+            {children}
         </DataContext.Provider>
     )
 }

@@ -5,20 +5,60 @@ import "../MyCalendar/myCalendar.less"
 import FormBox from "./components/FormBox"
 import IMG from "../../img/jake.jpg"
 import { useParams } from "react-router-dom"
+import RecommendEvent from "./components/RecommendEvent"
 
 
 
 const AddEvent = () => {
+
+
     // Gets global data from the context
     const { getSeason, selectedFriends, setSelectedFriends } = useContext(DataContext)
 
+    const [summary, setSummary] = useState("");
+    const [description, setDescription] = useState("")
 
+    const [startDate, setStartDate] = useState('');
+    const [startTime, setStartTime] = useState('');
+    const [start, setStart] = useState('');
 
+    const [endDate, setEndDate] = useState('');
+    const [endTime, setEndTime] = useState('');
+    const [end, setEnd] = useState('');
 
 
     const dateString = useParams().date
     const [date, setDate] = useState(new Date())
     const [season, setSeason] = useState('winter')
+
+    useEffect(() => {
+        if (startDate && startTime) {
+            const isoString = new Date(`${startDate}T${startTime}`).toISOString();
+            setStart(isoString);
+        }
+    }, [startDate, startTime]);
+
+
+    const handleSubmit = async () => {
+        try {
+            const response = await crud({
+                url: '/add-event',
+                method: 'POST',
+                body: {
+                    summary,
+                    description,
+                    start,
+                    end
+                }
+            })
+            console.log("Event added: ", response);
+        } catch (error) {
+            console.error("Error adding event:", error)
+        }
+    }
+
+
+
 
 
 
@@ -53,7 +93,24 @@ const AddEvent = () => {
                     </div>
                 </div>
 
-                <FormBox date={date} />
+                <FormBox
+                    summary={summary}
+                    setSummary={setSummary}
+                    description={description}
+                    setDescription={setDescription}
+
+                    startDate={startDate}
+                    setStartDate={setStartDate}
+                    startTime={startTime}
+                    setStartTime={setStartTime}
+
+                    endDate={endDate}
+                    setEndDate={setEndDate}
+                    endTime={endTime}
+                    setEndTime={setEndTime}
+
+                    handleSubmit={handleSubmit}
+                />
             </div >
 
             <div className="recomendation">
@@ -64,7 +121,8 @@ const AddEvent = () => {
                     </p>
                 </div>
                 <div className="events-container">
-                    <img src={IMG} className="img" />
+                    <RecommendEvent />
+
                 </div>
             </div>
         </section >
