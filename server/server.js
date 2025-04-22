@@ -15,9 +15,10 @@ require('./auth/google');
 const http = require('http');
 const { Server } = require('ws');
 const { Op, where } = require('sequelize');
-const { OAuth2Client } = require('google-auth-library');
+const { OAuth2Client, auth } = require('google-auth-library');
 const axios = require('axios');
 const { google } = require('googleapis');
+const { oauth2Client } = require('./auth/google');
 
 const alllowedCORS = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003']
 
@@ -358,7 +359,7 @@ async function addFriendRequest(ws, data) {
       status: 'pending',
     });
 
-    await Notification.create({
+    const notification = await Notification.create({
       userId: recipient.id,
       senderId: ws.user.id,
       data: { requestId: friendRequest.id },
@@ -369,7 +370,8 @@ async function addFriendRequest(ws, data) {
     wss.clients.forEach(client => {
       if (client.readyState === ws.OPEN && client.user && client.user.id === recipient.id) {
         client.send(JSON.stringify({
-          message: `You have a new friend request from ${ws.user.email}`,
+          type: 'notification',
+          notification,
           requestId: friendRequest.id,
         }));
       }
@@ -755,6 +757,44 @@ async function markAsRead(ws, data) {
   }
 }
 
+app.get('/events/getEvents', authenticateJWT, async (req, res) => {
+  const month = parseInt(req.query.month)
+  const year = parseInt(req.query.year)
+  if(!month || !year) {
+    res.status(400).json({ error: "Please provide month and year." })
+  }
+
+  const startDate = new Date(year, month, 1)
+  startDate.setHours(0, 0, 0, 0)
+  const endDate = new Date(year, month + 1, 0)
+  endDate.setHours(23, 59, 59, 999)
+  
+  try {
+    const events = await Event.findAll({
+      where: {
+        [Op.or]: [
+          {
+            userId: req.user.id
+          },
+          {
+            conformedUserIds: {
+              [Op.contains]: [req.user.id]
+            }
+          }
+        ],
+        datetime: {
+          [Op.between]: [startDate, endDate]
+        }
+      }
+    })
+
+    res.status(200).json({ events })
+  }
+  catch(err) {
+    res.status(500).json({ error: "Failed to fetch events" })
+  }
+})
+
 app.get('/events/getEvent', authenticateJWT, async (req, res) => {
   res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
   const eventId = req.query.eventId;
@@ -831,7 +871,10 @@ app.get('/getFriends', authenticateJWT, async (req, res) => {
       where: {
         id: friendIds,
         ...(searchQuery && {
-          username: { [Op.iLike]: `%${searchQuery}%` },
+          [Op.or]: [
+            { firstName: { [Op.iLike]: `%${searchQuery}%` } },
+            { familyName: { [Op.iLike]: `%${searchQuery}%` } }
+          ]
         }),
       },
       attributes: ['id', 'firstName', 'familyName', 'photo'],

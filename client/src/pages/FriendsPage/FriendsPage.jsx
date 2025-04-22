@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from "react"
 import { DataContext } from "../../context/DataContext"
 import Notifications from "./Notifications"
+import Friend from "../../components/Friend/Friend"
 
 const FriendsPage = () => {
     // Gets global data from the context
@@ -22,6 +23,10 @@ const FriendsPage = () => {
             })
 
             console.log(response)
+
+            if(response.status == 200) {
+                setFriends(response.data)
+            }
         }
 
         fetching()
@@ -51,7 +56,9 @@ const FriendsPage = () => {
             <h3>Your friends</h3>
             {
                 friends.length > 0 ?
-                null
+                friends.map(friend => (
+                    <Friend firstName={friend.firstName} familyName={friend.familyName} />
+                ))
                 :
                 <p>You have no friends yet :(</p>
             }

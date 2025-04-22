@@ -52,7 +52,23 @@
             gap: 1.6rem;
             overflow-y: auto;
             padding-right: 0.4rem;
+            padding-bottom: 0.4rem;
             // width: 100%;
+
+            .friend {
+                cursor: pointer;
+                transition: .2s;
+
+                &:hover, &.selected {
+                    box-shadow: none;
+                    transform: translate(0.4rem, 0.4rem);
+                }
+            }
+
+            .empty {
+                // text-align: center;
+                padding-left: 1.6rem;
+            }
         }
     }
 

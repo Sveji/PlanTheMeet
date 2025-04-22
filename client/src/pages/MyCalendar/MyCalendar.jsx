@@ -23,11 +23,23 @@ const MyCalendar = () => {
         }
     }, [leftRef.current, dayRef.current])
 
+    // useEffect(() => {
+    //     if(leftRef.current && friendsRef.current) {
+    //         console.log(leftRef.current.offsetHeight)
+    //         friendsRef.current.style.height = `${leftRef.current.offsetHeight}px`
+    //     }
+    // }, [leftRef, leftRef.current, friendsRef.current])
     useEffect(() => {
-        if(leftRef.current && friendsRef.current) {
-            friendsRef.current.style.height = `${leftRef.current.offsetHeight}px`
-        }
-    }, [leftRef.current, friendsRef.current])
+        if (!leftRef.current || !friendsRef.current) return;
+      
+        const observer = new ResizeObserver(() => {
+          friendsRef.current.style.height = `${leftRef.current.offsetHeight}px`;
+        });
+      
+        observer.observe(leftRef.current);
+      
+        return () => observer.disconnect();
+      }, [])
 
 
 
