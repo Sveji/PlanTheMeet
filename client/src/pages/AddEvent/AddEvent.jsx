@@ -1,6 +1,12 @@
 import { useContext, useEffect, useState } from "react"
 import './event.less'
 import { DataContext } from "../../context/DataContext"
+import "../MyCalendar/myCalendar.less"
+import FormBox from "./components/FormBox"
+import IMG from "../../img/jake.jpg"
+import RecommendEvent from "./components/RecommendEvent"
+
+
 
 const AddEvent = () => {
     // Gets global data from the context
@@ -8,8 +14,11 @@ const AddEvent = () => {
 
 
 
+
+
     const [date, setDate] = useState(new Date())
     const [season, setSeason] = useState('winter')
+
 
 
 
@@ -28,40 +37,22 @@ const AddEvent = () => {
                         {date.getDate() < 10 ? `0${date.getDate()}` : `${date.getDate()}`}.{date.getMonth() + 1 < 10 ? `0${date.getMonth() + 1}` : `${date.getMonth() + 1}`}.{date.getFullYear()}
                     </div>
                 </div>
-                <div className="form-box">
-                    <div className="form-container">
-                        <div className="form">
-                            <p className="details">Details</p>
-                            <div className="form-inputs">
-                                <label htmlFor="">Title</label>
-                                <input className="inputs" type="text" />
-                            </div>
-                            <div className="form-inputs">
-                                <label htmlFor="">Description</label>
-                                <textarea name="" id="" className="inputs description"></textarea>
-                            </div>
-                            <div className="info">
-                                <div className="info-inputs">
-                                    <label htmlFor="">Location</label>
-                                    <input type="text" className="inputs" />
-                                </div>
 
-                                <div className="info-inputs">
-                                    <label htmlFor="">Time</label>
-                                    <input type="time" className="inputs" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-                <div className="form-btn">
-                    <h4>Add to calendar</h4>
-                </div>
-
-
+                <FormBox />
             </div >
 
+            <div className="recomendation">
+                <div className="title-container">
+                    <h3>You might also like...</h3>
+                    <p>
+                        Here's some events for {date.getDate() < 10 ? `0${date.getDate()}` : `${date.getDate()}`}.{date.getMonth() + 1 < 10 ? `0${date.getMonth() + 1}` : `${date.getMonth() + 1}`}.{date.getFullYear()} in Sofia that you should consider.
+                    </p>
+                </div>
+                <div className="events-container">
+                    <RecommendEvent />
+
+                </div>
+            </div>
         </section >
     )
 }

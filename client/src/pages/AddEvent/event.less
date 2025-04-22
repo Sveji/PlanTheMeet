@@ -51,7 +51,7 @@
     display: flex;
     justify-content:center;
     align-items: flex-start;
-    background-color: aqua;
+    // background-color: aqua;
 
     .add {
         display: flex;
@@ -59,8 +59,8 @@
         gap: 1.6rem;
         align-items: flex-start;
         width: 100%;
-        // background-color: #ffffff;
-        border: 0.4rem solid red;
+        background-color: #ffffff;
+        // border: 0.4rem solid red;
 
         .title-box {
             display: flex;
@@ -102,7 +102,7 @@
             .form-container {
                 display: flex;
                 gap: 4.8rem;
-
+                // background-color: rgb(0, 198, 198);
 
                 .form {
                     // background-color: red;
@@ -190,7 +190,147 @@
                         }
                     }
                 }
+
+                .participants {
+                    display: flex;
+                    // width: 217px;
+                    padding: 2.6rem 0;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 2.4rem;
+                    // background-color: #833e3e;
+
+                    .title {
+                        color: #000;
+                        font-size: 2.4rem;
+                    }
+
+                    .friends {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: flex-start;
+                        gap: 0.8rem;
+                    }
+                }
+            }
+
+            .form-btn {
+                display: flex;
+                padding: 10px 20px;
+                justify-content: center;
+                align-items: center;
+                gap: 10px;
+                align-self: stretch;
+
+                background-color: var(--green);
+                border-radius: 10px;
+                border: 2px solid #000;
+                box-shadow: 4px 4px 0px 0px #000;
             }
         }
+    }
+
+    .recomendation {
+
+
+        display: flex;
+
+
+        flex-direction: column;
+        align-items: center;
+
+        padding-bottom: 2.4rem;
+        flex-direction: column;
+        align-items: center;
+        gap: 3.2rem;
+        width: 42rem;
+        flex-shrink: 0;
+        border-radius: 1rem;
+        border: 0.2rem solid #000;
+        background: #FFF;
+        box-shadow: 0.6rem 0.6rem 0 0 #000;
+
+        .title-container {
+
+
+            display: flex;
+            padding: 2.4rem 0.7rem;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            align-self: stretch;
+            border: 1px solid #000;
+            background: var(--green, #B5D68F);
+            border-radius: 1rem 1rem 0 0;
+
+
+        }
+
+        .events-container {
+            display: flex;
+            // width: 35rem;
+            flex-direction: column;
+            align-items: center;
+            gap: 4.8rem;
+            flex: 1 0 0;
+            border-radius: 1rem;
+
+            .recommended-event {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 1.6rem;
+                width: 83%;
+                // align-self: stretch;
+                border-radius: 10px;
+
+                .img {
+                    width: 100%;
+                    border-radius: 1rem;
+                    // contain: size;
+
+                }
+
+                .info-box {
+                    display: flex;
+                    padding-bottom: 0.7rem;
+                    flex-direction: column;
+                    align-items: center;
+                    text-align: center;
+                    gap: 2.4rem;
+
+                    .text {
+
+                        display: flex;
+                        flex-direction: column;
+                        align-items: flex-start;
+                        text-align: center;
+                        align-items: center;
+
+                        .title {
+                            font-size: 2rem;
+                        }
+                    }
+
+                    .btn {
+                        width: 100%;
+                        display: flex;
+                        padding: 1rem 2rem;
+                        justify-content: center;
+                        align-items: center;
+                        gap: 1rem;
+                        // align-self: stretch;
+
+                        border-radius: 1rem;
+                        border: 0.2rem solid #000;
+                        background: var(--green, #B5D68F);
+                        box-shadow: 0.4rem 0.4rem 0 0 #000;
+                    }
+                }
+            }
+        }
+
+
     }
 }

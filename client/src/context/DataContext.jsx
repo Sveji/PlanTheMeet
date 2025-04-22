@@ -16,6 +16,15 @@ const DataProvider = ({ children }) => {
 
 
 
+    // Removes the user's information from local storage and redirects to the login page
+    const handleLogOut = () => {
+        localStorage.removeItem('access')
+        setAccess(null)
+        navigate('/login')
+    }
+
+
+
     // Sets the url for the backend server
     axios.defaults.baseURL = 'http://127.0.0.1:5000/'
 
@@ -40,8 +49,12 @@ const DataProvider = ({ children }) => {
                 response = await axios[method](url, body, config);
             }
 
+            if(response.status == 401) handleLogOut()
+
             if(response) return response
         } catch(err) {
+            if(err.status == 401) handleLogOut()
+
             return err
         }
     }
@@ -65,6 +78,9 @@ const DataProvider = ({ children }) => {
 
     // Holds the user's notifications
     const [notifications, setNotifications] = useState([])
+
+    // Holds the error state for the friend requests
+    const [friendReqError, setFriendReqError] = useState(null)
 
 
 
@@ -94,7 +110,7 @@ const DataProvider = ({ children }) => {
                     }
                     if(parsedData.type === "notification") {
                         const newNotifications = [
-                            parsedData.message,
+                            parsedData.notification,
                             ...notifications
                         ]
                         console.log(newNotifications)
@@ -103,6 +119,13 @@ const DataProvider = ({ children }) => {
                     if(parsedData.type === "notificationRemoved") {
                         const newNotifications = notifications.filter(notification => notification.id !== parsedData.notificationId)
                         setNotifications(newNotifications)
+                    }
+                    if(parsedData.type === 'acceptFriendSuccess' || parsedData.type === 'rejectFriendSuccess') {
+                        const newNotifications = notifications.filter(notification => notification.type !== 'friendRequest' || (notification.type === 'friendRequest' && notification.data.requestId !== parsedData.requestId))
+                        setNotifications(newNotifications)
+                    }
+                    if(parsedData.type === 'friendReqError') {
+                        setFriendReqError(parsedData.error)
                     }
                 }
             }
@@ -156,7 +179,8 @@ const DataProvider = ({ children }) => {
             socketRef,
             getSeason,
             getFriendColor,
-            notifications
+            notifications,
+            friendReqError
         }}>
             { children }
         </DataContext.Provider>

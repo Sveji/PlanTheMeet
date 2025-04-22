@@ -137,6 +137,10 @@
             border-radius: 1rem;
             overflow: hidden;
             border: solid 0.1rem var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding-bottom: 1.6rem;
 
             &:hover {
                 transform: scale(1.05);
@@ -196,6 +200,42 @@
                     font-size: 1.4rem;
                     transform: translateY(-50%);
                     color: var(--date);
+                }
+            }
+
+            .event-list {
+                padding: 0 1.2rem;
+                // background-color: red;
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                gap: 0.4rem;
+
+                .event {
+                    display: flex;
+                    gap: 0.4rem;
+                    // background-color: aqua;
+                    width: 100%;
+                    align-items: center;
+
+                    .circle {
+                        width: 1.2rem;
+                        height: 1.2rem;
+                        aspect-ratio: 1 / 1;
+                        background-color: #3DCE6D;
+                        border-radius: 100%;
+                        display: block;
+                    }
+
+                    .title {
+                        font-size: 1.2rem;
+                        color: #474747;
+                        flex-grow: 1;
+
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
                 }
             }
         }

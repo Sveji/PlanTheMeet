@@ -1,6 +1,12 @@
-import { useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
+import { DataContext } from "../../../../context/DataContext"
 
 const Month = ({ selected, setSelected, month = null, year = null }) => {
+    // Gets global data from the context
+    const { crud } = useContext(DataContext)
+
+
+
     // Holds the loading state for the calendar
     const [loading, setLoading] = useState(true)
 
@@ -14,6 +20,20 @@ const Month = ({ selected, setSelected, month = null, year = null }) => {
     // Gets all dates of the given month
     const getAllDates = async (year, month) => {
         setLoading(true)
+
+
+
+        // EVENTS NE ZNAM
+        const response = await crud({
+            url: `/events/getEvents/?month=${month}&year=${year}`,
+            method: 'get'
+        })
+
+        console.log(response)
+
+        let events = []
+        if(response.status == 200) events = response.data.events
+
 
         let allDates = []
 
@@ -30,8 +50,15 @@ const Month = ({ selected, setSelected, month = null, year = null }) => {
         // Fills the dates array
         for(let day = 1; day <= days; day++) {
             const date = new Date(Date.UTC(year, month, day))
+            const currEvents = events.filter(event => {
+                const eventDate = new Date(event.datetime)
+                return eventDate.getFullYear() === year && eventDate.getMonth() === month && eventDate.getDate() === day
+            })
 
-            allDates.push(date)
+            allDates.push({
+                date: date,
+                events: currEvents
+            })
         }
 
         setDates(allDates)
@@ -53,27 +80,41 @@ const Month = ({ selected, setSelected, month = null, year = null }) => {
                 !loading &&
                 dates.map((date, index) => (
                     date ?
-                    <div onClick={() => setSelected(date)} key={index} className={`
+                    <div onClick={() => setSelected(date.date)} key={index} className={`
                         date
-                        ${index % 2 == 1 ? 'disabled' : null}
-                        ${date.getDay() == 0 || date.getDay() == 6 ? 'weekend' : null}
+                        ${date.date.getDay() == 0 || date.date.getDay() == 6 ? 'weekend' : null}
                         ${
-                            date.getFullYear() === new Date().getFullYear() &&
-                            date.getMonth() === new Date().getMonth() && 
-                            date.getDate() === new Date().getDate() 
+                            date.date.getFullYear() === new Date().getFullYear() &&
+                            date.date.getMonth() === new Date().getMonth() && 
+                            date.date.getDate() === new Date().getDate() 
                             ? 'today' : null
                         }
                         ${
                             selected &&
-                            date.getFullYear() === selected.getFullYear() &&
-                            date.getMonth() === selected.getMonth() && 
-                            date.getDate() === selected.getDate() 
+                            date.date.getFullYear() === selected.getFullYear() &&
+                            date.date.getMonth() === selected.getMonth() && 
+                            date.date.getDate() === selected.getDate() 
                             ? 'selected' : null
                         }`
                     }>
                         <div className="day-box">
-                            <p className="day">{date.getDate()}</p>
+                            <p className="day">{date.date.getDate()}</p>
                         </div>
+
+                        {
+                            date.events &&
+                            date.events.length > 0 &&
+                            <div className="event-list">
+                                {
+                                    date.events.map((event, i) => (
+                                        <div key={i} className="event">
+                                            <div className="circle"></div>
+                                            <p className="title">{event.title}</p>
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        }
                     </div>
                     :
                     <div key={index}></div>

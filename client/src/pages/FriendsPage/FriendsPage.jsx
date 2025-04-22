@@ -1,10 +1,11 @@
 import { useContext, useEffect, useState } from "react"
 import { DataContext } from "../../context/DataContext"
 import Notifications from "./Notifications"
+import Friend from "../../components/Friend/Friend"
 
 const FriendsPage = () => {
     // Gets global data from the context
-    const { crud, access, socketRef, socketSend } = useContext(DataContext)
+    const { crud, socketSend, friendReqError } = useContext(DataContext)
 
 
 
@@ -22,6 +23,10 @@ const FriendsPage = () => {
             })
 
             console.log(response)
+
+            if(response.status == 200) {
+                setFriends(response.data)
+            }
         }
 
         fetching()
@@ -46,37 +51,23 @@ const FriendsPage = () => {
 
 
 
-    // Accepts a friend request through the web socket server
-    const handleAcceptFriend = (requestId) => {
-        socketSend({
-            type: 'acceptFriend',
-            requestId
-        })
-    }
-
-
-
-    // Rejects a friend request through the web socket server
-    const handleRejectFriend = (requestId) => {
-        socketSend({
-            type: 'rejectFriend',
-            requestId
-        })
-    }
-
-
-
     return (
         <>
             <h3>Your friends</h3>
             {
                 friends.length > 0 ?
-                null
+                friends.map(friend => (
+                    <Friend firstName={friend.firstName} familyName={friend.familyName} />
+                ))
                 :
                 <p>You have no friends yet :(</p>
             }
 
             <h3>Add friends</h3>
+            {
+                friendReqError &&
+                <p className="error">{friendReqError}</p>
+            }
             <form onSubmit={(e) => addFriend(e)}>
                 <input
                     placeholder="Email"
@@ -85,9 +76,6 @@ const FriendsPage = () => {
                 />
                 <button type="submit">Add friend</button>
             </form>
-
-            <button onClick={() => handleAcceptFriend(14)}>Accept Marti</button>
-            <button onClick={() => handleRejectFriend(14)}>Reject Marti</button>
 
             <Notifications />
         </>

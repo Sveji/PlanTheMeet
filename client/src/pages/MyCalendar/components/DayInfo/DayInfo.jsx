@@ -1,14 +1,45 @@
 import { MdArrowBackIos } from "react-icons/md";
 import { Link } from "react-router-dom";
 import DuplicateBox from "../../../../components/DuplicateBox/DuplicateBox";
+import { useContext, useEffect, useState } from "react";
+import { DataContext } from "../../../../context/DataContext";
 
 
 
 const DayInfo = ({ ref, selected, setSelected }) => {
+    // Gets global data from the context
+    const { crud } = useContext(DataContext)
+
+
+
     // Formats a date object
     const formatDate = (date) => {
         return `${date.getDate() < 10 ? `0${date.getDate()}` : date.getDate()}.${date.getMonth() + 1 < 10 ? `0${date.getMonth() + 1}` : date.getMonth() + 1}.${date.getFullYear()}`
     }
+
+
+
+    // Holds the state for the events
+    const [events, setEvents] = useState([])
+
+
+
+    // Gets the event for the selected date on init
+    useEffect(() => {
+        const fetching = async () => {
+             // EVENTS NE ZNAM
+            const response = await crud({
+                url: `/events/getEvents/?day=${selected.getDate()}&month=${selected.getMonth()}&year=${selected.getFullYear()}`,
+                method: 'get'
+            })
+
+            console.log(response)
+
+            if(response.status == 200) setEvents(response.data.events)
+        }
+
+        fetching()
+    }, [selected])
 
 
 
@@ -22,25 +53,6 @@ const DayInfo = ({ ref, selected, setSelected }) => {
         //     title: 'Great Monday',
         //     description: 'Официален празник'
         // }
-    ]
-
-    const events = [
-        // {
-        //     "id": "1ngiel3jk17c1g1in20fc3b1k6",
-        //     "title": "izlizane s priqteli"
-        // },
-        // {
-        //     "id": "1ngiel3jk17c1g1in20fc3b1k6",
-        //     "title": "izlizane s priqteli"
-        // },
-        // {
-        //     "id": "1ngiel3jk17c1g1in20fc3b1k6",
-        //     "title": "izlizane s priqteli"
-        // },
-        // {
-        //     "id": "1ngiel3jk17c1g1in20fc3b1k6",
-        //     "title": "izlizane s priqteli"
-        // },
     ]
 
 

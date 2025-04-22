@@ -15,12 +15,16 @@ require('./auth/google');
 const http = require('http');
 const { Server } = require('ws');
 const { Op, where } = require('sequelize');
-const { OAuth2Client } = require('google-auth-library');
+const { OAuth2Client, auth } = require('google-auth-library');
 const axios = require('axios');
 const { google } = require('googleapis');
 const cheerio = require('cheerio');
 const alllowedCORS = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003']
 
+const oauth2Client = new google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECR)
+
+
+//AUTHENTICATION
 sequelize.authenticate()
   .then(() => console.log('Database connection established successfully'))
   .catch(err => console.error('Unable to connect to the database:', err));
@@ -47,11 +51,11 @@ const server = http.createServer(app);
 const wss = new Server({ server });
 
 const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASS,
-    port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASS,
+  port: process.env.DB_PORT,
 });
 
 function authenticateJWT(req, res, next) {
@@ -60,127 +64,375 @@ function authenticateJWT(req, res, next) {
 
   const token = authHeader.split(' ')[1];
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err) return res.sendStatus(401);
     req.user = user;
     next();
   });
 }
 
 app.post('/auth/login', async (req, res) => {
-    
-    const {
-        email,
-        password
-    } = req.body;
-    try {
-      const user = await User.findOne({ where: { email } });
-      if (!user || !user.password) {
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-  
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
-  
-      const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  
-      res.json({ token, user });
-    } catch (err) {
+
+  const {
+    email,
+    password
+  } = req.body;
+  try {
+    const user = await User.findOne({ where: { email } });
+    if (!user || !user.password) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+
+    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '100h' });
+
+    res.json({ token, user });
+  } catch (err) {
     console.error(err.message);
     res.status(500).json({ error: "Failed to login" });
-    }
+  }
 });
 
 app.post('/auth/register', async (req, res) => {
-    
-    const {
-        email,
-        firstName,
-        familyName,
-        password,
-        conform_password
-    } = req.body;
 
-    if( conform_password != password){
-        res.status(400).json({ error: "Passwords do not match" });
-    }
-    try {
-      const existing = await User.findOne({ where: { email } });
-      if (existing) return res.status(400).json({ error: 'Email already in use' });
-  
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const user = await User.create({ email, password: hashedPassword, firstName, familyName });
-  
-      const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  
-      res.json({ token, user });
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).json({ error: "Failed to login" });
-    }
+  const {
+    email,
+    firstName,
+    familyName,
+    password,
+    conform_password
+  } = req.body;
+
+  if (conform_password != password) {
+    res.status(400).json({ error: "Passwords do not match" });
+  }
+  try {
+    const existing = await User.findOne({ where: { email } });
+    if (existing) return res.status(400).json({ error: 'Email already in use' });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({ email, password: hashedPassword, firstName, familyName });
+
+    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({ token, user });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: "Failed to login" });
+  }
 });
 
-// app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+//   try {
+//     const ticket = await client.verifyIdToken({
+//       idToken: token,
+//       audience: process.env.GOOGLE_CLIENT_ID,
+//     });
 
-// app.get('/auth/google/callback', (req, res, next) => {
-//     passport.authenticate('google', { session: false }, (err, user, info) => {
-//       if (err || !user) {
-//         console.log('Hit with err:', err)
-//         return res.status(401).json({ message: 'Authentication failed', error: err });
-//       }
-//       const token = jwt.sign(
-//         {
-//           id: user.id,
-//           email: user.email
-//         },
-//         process.env.JWT_SECRET,
-//         { expiresIn: '1h' }
-//       );
-//       console.log(token)
-  
-//       return res.json({ token, user });
-//     })(req, res, next);
+//     const payload = ticket.getPayload();
+//     const { sub: googleId, email, given_name, family_name, picture } = payload;
+
+//     let user = await User.findOne({ where: { googleId } });
+
+//     if (!user) {
+//       user = await User.create({
+//         googleId,
+//         email,
+//         firstName: given_name,
+//         familyName: family_name,
+//         photo: picture,
+//       });
+//     }
+
+//     const jwtToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+//     res.json({ token: jwtToken, user });
+
+//   } catch (error) {
+//     console.error('Google token verify error', error);
+//     res.status(401).json({ error: 'Invalid Google token' });
+//   }
 // });
 
-app.post('/auth/google/token', async (req, res) => {
-  const { token } = req.body;
-  const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+
+
+
+// app.get('/', (req, res) => {
+//   res.send(`<h1>Welcome</h1><a href="/auth/google">Login with Google</a>`);
+// });
+
+
+
+//GOOGLE LOGIN
+app.get('/', async (req, res) => {
+  const code = req.query.code;
+
+  if (!code) {
+
+    const url = oauth2Client.generateAuthUrl({
+      access_type: "offline",
+      scope: [
+        'https://www.googleapis.com/auth/calendar',
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/userinfo.email'
+      ].join(' '),
+      prompt: "consent"
+    });
+    return res.redirect(url);
+  }
+
 
   try {
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+
+    const { data: profile } = await oauth2Client.request({
+      url: 'https://www.googleapis.com/oauth2/v3/userinfo',
     });
 
-    const payload = ticket.getPayload();
-    const { sub: googleId, email, given_name, family_name, picture } = payload;
+    const [user, created] = await User.findOrCreate({
+      where: { email: profile.email },
+      defaults: {
+        googleId: profile.sub,
+        firstName: profile.given_name,
+        familyName: profile.family_name,
+        email: profile.email,
+        photo: profile.picture,
+        password: null
+      }
+    });
 
-    let user = await User.findOne({ where: { googleId } });
+    const jwtToken = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
 
-    if (!user) {
-      user = await User.create({
-        googleId,
-        email,
-        firstName: given_name,
-        familyName: family_name,
-        photo: picture,
-      });
+    res.json({
+      message: "✅ Successfully authenticated!",
+      token: jwtToken,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        familyName: user.familyName,
+        email: user.email,
+        photo: user.photo
+      }
+    });
+  } catch (err) {
+    console.error('Error getting tokens:', err);
+    res.send("Error during authentication.");
+  }
+});
+
+app.post('/auth/google', async (req, res) => {
+  const { code } = req.body;
+
+  try {
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+
+    const { data: profile } = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` }
+    });
+
+    const [user, created] = await User.findOrCreate({
+      where: { email: profile.email },
+      defaults: {
+        googleId: profile.sub,
+        firstName: profile.given_name,
+        familyName: profile.family_name,
+        email: profile.email,
+        photo: profile.picture,
+        password: null
+      }
+    });
+
+    const jwtToken = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({
+      token: jwtToken,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        email: user.email,
+        photo: user.photo
+      }
+    });
+
+  } catch (err) {
+    console.error("Google Auth Error:", err);
+    res.status(500).json({ error: "Google login failed" });
+  }
+});
+
+// app.get('/', async (req, res) => {
+//   const code = req.query.code;
+
+//   if (!code) {
+//     const url = oauth2Client.generateAuthUrl({
+//       access_type: "offline",
+//       scope: 'https://www.googleapis.com/auth/calendar',
+//       prompt: "consent"
+//     });
+//     return res.redirect(url);
+//   }
+
+//   try {
+//     const { tokens } = await oauth2Client.getToken(code);
+//     oauth2Client.setCredentials(tokens);
+
+
+//     console.log('Tokens received:', tokens);
+
+//     const payload = {
+//       email: tokens.email,
+//       access_token: tokens.access_token,
+//       refresh_token: tokens.refresh_token
+//     };
+
+//     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+
+//     res.json({
+//       message: "✅ Successfully authenticated with Google Calendar!",
+//       token: token
+//     });
+//   } catch (err) {
+//     console.error('Error getting tokens:', err);
+//     res.send("❌ Error during authentication. Please try again.");
+//   }
+// });
+
+
+app.get('/calendars', (req, res) => {
+  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+  calendar.calendarList.list({}, (err, result) => {
+    if (err) {
+      console.error('Error fetching calendar list', err);
+      return res.send('Error fetching calendars');
     }
 
-    const jwtToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const calendars = result.data.items.map(cal => ({
+      id: cal.id,
+      summary: cal.summary,
+    }));
 
-    res.json({ token: jwtToken, user });
+    res.json(calendars);
+  });
+});
 
-  } catch (error) {
-    console.error('Google token verify error', error);
-    res.status(401).json({ error: 'Invalid Google token' });
+app.get('/all-events', async (req, res) => {
+  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+  try {
+    const list = await calendar.calendarList.list();
+    const calendars = list.data.items;
+
+    const eventsPromises = calendars.map(cal =>
+      calendar.events.list({
+        calendarId: cal.id,
+        timeMin: new Date().toISOString(),
+        maxResults: 15,
+        singleEvents: true,
+        orderBy: 'startTime'
+      }).then(res => ({
+        calendar: cal.summary,
+        events: res.data.items
+      }))
+    );
+
+    const allEvents = await Promise.all(eventsPromises);
+    res.json(allEvents);
+  } catch (err) {
+    console.error('Error fetching events', err);
+    res.send('Error loading events');
   }
 });
 
 
-app.get('/', (req, res) => {
-  res.send(`<h1>Welcome</h1><a href="/auth/google">Login with Google</a>`);
+
+app.get("/add-event", async (req, res) => {
+  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+  await calendar.events.insert({
+    calendarId: "primary",
+    requestBody: {
+      summary: "This is a test event",
+      description: "Blaaaaaahhhhhhhhhh",
+      start: {
+        dateTime: "2025-04-23T15:48:00+03:00"
+      },
+      end: {
+        dateTime: "2025-04-24T15:48:00+03:00"
+      }
+    }
+  })
+
+  res.send({
+    msg: "Done",
+  })
+})
+
+app.get('/events/getEvents', authenticateJWT, async (req, res) => {
+  const month = parseInt(req.query.month);
+  const year = parseInt(req.query.year);
+
+  if (!month || !year) {
+    return res.status(400).json({ error: "Please provide both month and year." });
+  }
+
+  const startDate = new Date(year, month - 1, 1); // month is 0-indexed
+  startDate.setHours(0, 0, 0, 0);
+
+  const endDate = new Date(year, month, 0); // last day of month
+  endDate.setHours(23, 59, 59, 999);
+
+  try {
+    const events = await Event.findAll({
+      where: {
+        startTime: {
+          [Op.between]: [startDate, endDate]
+        }
+      }
+    });
+
+    res.status(200).json({ events });
+  } catch (err) {
+    console.error("❌ Error fetching events:", err);
+    res.status(500).json({ error: "Failed to fetch events" });
+  }
 });
-  
+
+
+
+
+
+function verifyToken(req, res, next) {
+  const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
+
+  if (!token) {
+    return res.status(403).send("❌ No token provided");
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).send("❌ Invalid or expired token");
+    }
+    req.user = decoded;
+    next();
+  });
+}
+
+
+
+
+
 ////////////////////////
 // Web socket server
 ////////////////////////
@@ -214,7 +466,7 @@ wss.on('connection', async (ws, req) => {
       if (user.id) {
         const userId = user.id
         const notifications = await Notification.findAll({ where: { userId } });
-    
+
         ws.send(JSON.stringify({
           type: 'notifications',
           notifications,
@@ -267,7 +519,15 @@ async function addFriendRequest(ws, data) {
     const recipient = await User.findOne({ where: { email: email } });
 
     if (!recipient) {
-      return ws.send(JSON.stringify({ error: 'User not found' }));
+      return ws.send(JSON.stringify({ type: 'friendReqError', error: 'User not found.' }));
+    }
+
+    if (ws.user.id === recipient.id) {
+      return ws.send(JSON.stringify({ type: 'friendReqError', error: "You can't send a friend request to yourself." }))
+    }
+
+    if (ws.user.friends.includes(recipient.id)) {
+      return ws.send(JSON.stringify({ type: 'friendReqError', error: 'User is already your friend.' }))
     }
 
     const existingRequest = await FriendRequest.findOne({
@@ -279,7 +539,7 @@ async function addFriendRequest(ws, data) {
     });
 
     if (existingRequest) {
-      return ws.send(JSON.stringify({ message: 'Friend request already sent' }));
+      return ws.send(JSON.stringify({ type: 'friendReqError', error: 'Friend request already sent' }));
     }
 
     const friendRequest = await FriendRequest.create({
@@ -288,9 +548,10 @@ async function addFriendRequest(ws, data) {
       status: 'pending',
     });
 
-    await Notification.create({
+    const notification = await Notification.create({
       userId: recipient.id,
       senderId: ws.user.id,
+      data: { requestId: friendRequest.id },
       type: 'friendRequest',
       message: `${ws.user.firstName} ${ws.user.familyName} sent you a friend request!`,
     });
@@ -298,7 +559,8 @@ async function addFriendRequest(ws, data) {
     wss.clients.forEach(client => {
       if (client.readyState === ws.OPEN && client.user && client.user.id === recipient.id) {
         client.send(JSON.stringify({
-          message: `You have a new friend request from ${ws.user.email}`,
+          type: 'notification',
+          notification,
           requestId: friendRequest.id,
         }));
       }
@@ -308,7 +570,7 @@ async function addFriendRequest(ws, data) {
 
   } catch (err) {
     console.error('Error adding friend request:', err);
-    ws.send(JSON.stringify({ error: 'Error sending friend request' }));
+    ws.send(JSON.stringify({ type: 'friendReqError', error: 'Error sending friend request' }));
   }
 }
 
@@ -321,26 +583,31 @@ async function acceptFriendRequest(ws, data) {
       return ws.send(JSON.stringify({ error: 'Invalid or expired request' }));
     }
 
-    request.status = 'accepted';
-    await request.save();
-
     const requester = await User.findByPk(request.requesterId);
-    requester.friends.push(ws.user.id);
-    ws.user.friends.push(requester.id);
-    
+    if (!requester) {
+      return ws.send(JSON.stringify({ error: "Couldn't find requester." }))
+    }
+    requester.friends = [...requester.friends, ws.user.id];
+    ws.user.friends = [...ws.user.friends, requester.id];
+
     await requester.save();
     await ws.user.save();
 
-    await Notification.create({
+
+    request.status = 'accepted';
+    await request.save();
+
+
+    const notification = await Notification.create({
       userId: request.requesterId,
       senderId: request.recipientId,
       type: 'acceptedFriendRequest',
-      message: `${request.recipientId.firstName} ${request.recipientId.familyName} accepted your friend request!`,
+      message: `${requester.firstName} ${requester.familyName} accepted your friend request!`,
     });
 
     await Notification.destroy({
       where: {
-        userId: request.recipientId, 
+        userId: request.recipientId,
         senderId: request.requesterId,
         type: 'friendRequest'
       }
@@ -349,10 +616,10 @@ async function acceptFriendRequest(ws, data) {
     wss.clients.forEach(client => {
       if (client.readyState === ws.OPEN) {
         if (client.user.id === ws.user.id) {
-          client.send(JSON.stringify({ message: `You accepted the friend request from ${requester.email}` }));
+          client.send(JSON.stringify({ type: 'acceptFriendSuccess', message: `You accepted the friend request from ${requester.email}`, requestId }));
         }
         if (client.user.id === requester.id) {
-          client.send(JSON.stringify({ type: 'notification', message: `${ws.user.email} accepted your friend request` }));
+          client.send(JSON.stringify({ type: 'notification', notification }));
         }
       }
     });
@@ -372,32 +639,37 @@ async function rejectFriendRequest(ws, data) {
       return ws.send(JSON.stringify({ error: 'Invalid or expired request' }));
     }
 
+    const requester = await User.findByPk(request.requesterId);
+    if (!requester) {
+      return ws.send(JSON.stringify({ error: "Couldn't find requester." }))
+    }
+
     request.status = 'rejected';
     await request.save();
 
-    await Notification.create({
+    const notification = await Notification.create({
       userId: request.requesterId,
       senderId: request.recipientId,
       type: 'rejectFriendRequest',
-      message: `${request.recipientId.firstName} ${request.recipientId.familyName} rejected your friend request!`,
+      message: `${requester.firstName} ${requester.familyName} rejected your friend request!`,
     });
 
     await Notification.destroy({
       where: {
-        userId: request.recipientId, 
+        userId: request.recipientId,
         senderId: request.requesterId,
         type: 'friendRequest'
       }
     });
 
-    const requester = await User.findByPk(request.requesterId);
+    // const requester = await User.findByPk(request.requesterId);
     wss.clients.forEach(client => {
       if (client.readyState === ws.OPEN) {
         if (client.user.id === ws.user.id) {
-          client.send(JSON.stringify({ message: `You rejected the friend request from ${requester.email}` }));
+          client.send(JSON.stringify({ type: 'rejectFriendSuccess', message: `You rejected the friend request from ${requester.email}`, requestId }));
         }
         if (client.user.id === requester.id) {
-          client.send(JSON.stringify({ message: `${ws.user.email} rejected your friend request` }));
+          client.send(JSON.stringify({ type: 'notification', notification }));
         }
       }
     });
@@ -409,14 +681,14 @@ async function rejectFriendRequest(ws, data) {
 }
 
 async function addEvent(ws, data) {
-  const{ 
+  const {
     title,
     description,
     date,
     time,
     location,
     participants,
-    creatorId 
+    creatorId
   } = data;
 
   try {
@@ -503,13 +775,13 @@ async function addEvent(ws, data) {
 };
 
 async function leaveEvent(ws, data) {
-  const{ 
+  const {
     token,
     eventId,
   } = data;
 
   var currentUser
-  
+
   try {
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
       if (err) throw new Error('Not valid sesion');
@@ -558,8 +830,8 @@ async function acceptEventInvite(ws, data) {
   } = data
 
   var currentUser
-  
-  try{
+
+  try {
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
       if (err) throw new Error('Not valid sesion');
       currentUser = user;
@@ -568,7 +840,7 @@ async function acceptEventInvite(ws, data) {
     const event = await Event.findByPk(eventId);
     if (!event) throw new Error('Event not found');
 
-    if(!event.invitedUserIds.includes(currentUser.id)){
+    if (!event.invitedUserIds.includes(currentUser.id)) {
       throw new Error('You are not invited to this event');
     }
 
@@ -598,7 +870,7 @@ async function acceptEventInvite(ws, data) {
       message: 'Internal server error',
     }));
   }
-  
+
 }
 
 async function rejectEventInvite(ws, data) {
@@ -608,8 +880,8 @@ async function rejectEventInvite(ws, data) {
   } = data
 
   var currentUser
-  
-  try{
+
+  try {
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
       if (err) throw new Error('Not valid sesion');
       currentUser = user;
@@ -618,7 +890,7 @@ async function rejectEventInvite(ws, data) {
     const event = await Event.findByPk(eventId);
     if (!event) throw new Error('Event not found');
 
-    if(!event.invitedUserIds.includes(currentUser.id)){
+    if (!event.invitedUserIds.includes(currentUser.id)) {
       throw new Error('You are not invited to this event');
     }
 
@@ -648,24 +920,24 @@ async function rejectEventInvite(ws, data) {
       message: 'Internal server error',
     }));
   }
-  
+
 }
 
 async function markAsRead(ws, data) {
   const { token, type, notificationId } = data;
 
-  try{
+  try {
     var currentUser
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
       if (err) throw new Error('Not valid sesion');
       currentUser = user;
     });
-    
+
     if (type === 'markAsRead' && notificationId) {
       await Notification.destroy({ where: { id: notificationId } });
       ws.send(JSON.stringify({ type: 'notificationRemoved', notificationId }));
     }
-  }catch (err) {
+  } catch (err) {
     console.error('Error deletng notification:', err);
     ws?.send?.(JSON.stringify({
       type: 'error',
@@ -674,10 +946,49 @@ async function markAsRead(ws, data) {
   }
 }
 
+app.get('/events/getEvents', authenticateJWT, async (req, res) => {
+  const day = parseInt(req.query.day)
+  const month = parseInt(req.query.month)
+  const year = parseInt(req.query.year)
+  if (!month || !year) {
+    res.status(400).json({ error: "Please provide month and year." })
+  }
+
+  let startDate = new Date(year, month, 1)
+  startDate.setHours(0, 0, 0, 0)
+  let endDate = new Date(year, month + 1, 0)
+  endDate.setHours(23, 59, 59, 999)
+
+  try {
+    const events = await Event.findAll({
+      where: {
+        [Op.or]: [
+          {
+            userId: req.user.id
+          },
+          {
+            conformedUserIds: {
+              [Op.contains]: [req.user.id]
+            }
+          }
+        ],
+        datetime: {
+          [Op.between]: [startDate, endDate]
+        }
+      }
+    })
+
+    res.status(200).json({ events })
+  }
+  catch (err) {
+    res.status(500).json({ error: "Failed to fetch events" })
+  }
+})
+
 app.get('/events/getEvent', authenticateJWT, async (req, res) => {
   res.set('Access-Control-Allow-Origin', 'http://localhost:3000')
   const eventId = req.query.eventId;
-  try{
+  try {
     const event = await Event.findByPk(eventId);
     if (!event) {
       throw new Error('Event not found');
@@ -719,7 +1030,7 @@ app.get('/events/getEvent', authenticateJWT, async (req, res) => {
 })
 
 app.post('/events/editEvent', authenticateJWT, async (req, res) => {
-  
+
   const {
     eventId,
     updatedData,
@@ -734,7 +1045,7 @@ app.post('/events/editEvent', authenticateJWT, async (req, res) => {
 })
 
 app.get('/getFriends', authenticateJWT, async (req, res) => {
-  
+
   const searchQuery = req.query.query?.toLowerCase() || '';
 
   try {
@@ -750,7 +1061,10 @@ app.get('/getFriends', authenticateJWT, async (req, res) => {
       where: {
         id: friendIds,
         ...(searchQuery && {
-          username: { [Op.iLike]: `%${searchQuery}%` },
+          [Op.or]: [
+            { firstName: { [Op.iLike]: `%${searchQuery}%` } },
+            { familyName: { [Op.iLike]: `%${searchQuery}%` } }
+          ]
         }),
       },
       attributes: ['id', 'firstName', 'familyName', 'photo'],
@@ -764,9 +1078,9 @@ app.get('/getFriends', authenticateJWT, async (req, res) => {
 });
 
 app.get('/events', authenticateJWT, async (req, res) => {
-  
+
   const date = req.query.date;
-  const userId  = req.user.id;
+  const userId = req.user.id;
 
   if (!date || !userId) {
     return res.status(400).json({ error: 'Date and userId are required' });
@@ -801,14 +1115,14 @@ app.get('/events', authenticateJWT, async (req, res) => {
 });
 
 app.post('/events/getRecomendations', authenticateJWT, async (req, res) => {
-  
+
   const userId = req.user.id;
   const {
     date,
     location,
   } = req.body
 
-  try{
+  try {
     // Tuka she se sluchwa neshto
   } catch (err) {
     console.error('Error recomending events:', err);
@@ -818,17 +1132,65 @@ app.post('/events/getRecomendations', authenticateJWT, async (req, res) => {
 
 app.get('/syncGoogleCallendar', authenticateJWT, async (req, res) => {
   const userId = req.user.id;
-  const userEvents = await Event.findAll({where: {
-    userId: userId
-  }})
-  
+  const userEvents = await Event.findAll({
+    where: {
+      userId: userId
+    }
+  })
+
   //Prashrtat se na Alek
   const response = await axios.post('http://localhost:5001/syncFromJavascript', {
     userEvents
   })
 
   res.status(response.status).json(response.data)
+
+
+
+
+
+
+
 })
+
+//Getting all the user calendars
+app.get('/calendars', (req, res) => {
+  const calendar = google.calendar({ version: "v3", auth: oauth2Client })
+  calendar.calendarList.list({}, (err, response) => {
+    if (err) {
+      console.error("error fetching calendar", err)
+      res.end("Error")
+      return
+    }
+
+    const calendars = response.data.items
+    res.json(calendars)
+  })
+})
+
+//Getting events
+app.get('/events', (req, res) => {
+  const calendarId = req.query.calendar ?? 'primary'
+  const calendar = google.calendar({ version: "v3", auth: oauth2Client })
+  calendar.events.list({
+    calendarId,
+    timeMin: (new Date()).toISOString(),
+    maxResults: 15,
+    singleEvents: true,
+    orderBy: "startTime"
+  }, (err, response) => {
+    if (err) {
+      console.error("Cant fetch events")
+      res.send("Error")
+      return
+    }
+
+    const events = response.data.items
+    res.json(events)
+  })
+})
+
+
 
 
 // Enable CORS for the React frontend
