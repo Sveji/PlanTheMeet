@@ -23,6 +23,8 @@ const alllowedCORS = ['http://localhost:3000', 'http://localhost:3001', 'http://
 
 const oauth2Client = new google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECR)
 
+
+//AUTHENTICATION
 sequelize.authenticate()
   .then(() => console.log('Database connection established successfully'))
   .catch(err => console.error('Unable to connect to the database:', err));
@@ -162,7 +164,7 @@ app.post('/auth/register', async (req, res) => {
 
 
 
-
+//GOOGLE LOGIN
 app.get('/', async (req, res) => {
   const code = req.query.code;
 
@@ -180,51 +182,15 @@ app.get('/', async (req, res) => {
   try {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
-    res.send("✅ Successfully authenticated with Google Calendar!");
+    res.send("Successfully authenticated with Google Calendar!");
   } catch (err) {
     console.error('Error getting tokens:', err);
-    res.send("❌ Error during authentication.");
+    res.send("Error during authentication.");
   }
 });
 
-// app.get('/', async (req, res) => {
-//   const code = req.query.code;
 
-//   if (!code) {
-//     const url = oauth2Client.generateAuthUrl({
-//       access_type: "offline",
-//       scope: 'https://www.googleapis.com/auth/calendar',
-//       prompt: "consent"
-//     });
-//     return res.redirect(url);
-//   }
-
-//   try {
-//     const { tokens } = await oauth2Client.getToken(code);
-//     oauth2Client.setCredentials(tokens);
-
-
-//     console.log('Tokens received:', tokens);
-
-//     const payload = {
-//       email: tokens.email,
-//       access_token: tokens.access_token,
-//       refresh_token: tokens.refresh_token
-//     };
-
-//     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
-
-//     res.json({
-//       message: "✅ Successfully authenticated with Google Calendar!",
-//       token: token
-//     });
-//   } catch (err) {
-//     console.error('Error getting tokens:', err);
-//     res.send("❌ Error during authentication. Please try again.");
-//   }
-// });
-
-
+//CALENDAR
 app.get('/calendars', (req, res) => {
   const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
@@ -242,6 +208,35 @@ app.get('/calendars', (req, res) => {
     res.json(calendars);
   });
 });
+
+app.get('/all-events', async (req, res) => {
+  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+  try {
+    const list = await calendar.calendarList.list();
+    const calendars = list.data.items;
+
+    const eventsPromises = calendars.map(cal =>
+      calendar.events.list({
+        calendarId: cal.id,
+        timeMin: new Date().toISOString(),
+        maxResults: 15,
+        singleEvents: true,
+        orderBy: 'startTime'
+      }).then(res => ({
+        calendar: cal.summary,
+        events: res.data.items
+      }))
+    );
+
+    const allEvents = await Promise.all(eventsPromises);
+    res.json(allEvents);
+  } catch (err) {
+    console.error('Error fetching events', err);
+    res.send('Error loading events');
+  }
+});
+
 
 
 app.get("/add-event", async (req, res) => {
@@ -265,6 +260,39 @@ app.get("/add-event", async (req, res) => {
     msg: "Done",
   })
 })
+
+app.get('/events/getEvents', authenticateJWT, async (req, res) => {
+  const month = parseInt(req.query.month);
+  const year = parseInt(req.query.year);
+
+  if (!month || !year) {
+    return res.status(400).json({ error: "Please provide both month and year." });
+  }
+
+  const startDate = new Date(year, month - 1, 1); // month is 0-indexed
+  startDate.setHours(0, 0, 0, 0);
+
+  const endDate = new Date(year, month, 0); // last day of month
+  endDate.setHours(23, 59, 59, 999);
+
+  try {
+    const events = await Event.findAll({
+      where: {
+        startTime: {
+          [Op.between]: [startDate, endDate]
+        }
+      }
+    });
+
+    res.status(200).json({ events });
+  } catch (err) {
+    console.error("❌ Error fetching events:", err);
+    res.status(500).json({ error: "Failed to fetch events" });
+  }
+});
+
+
+
 
 
 function verifyToken(req, res, next) {
