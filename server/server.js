@@ -18,7 +18,6 @@ const { Op, where } = require('sequelize');
 const { OAuth2Client, auth } = require('google-auth-library');
 const axios = require('axios');
 const { google } = require('googleapis');
-const { oauth2Client } = require('./auth/google');
 
 const alllowedCORS = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003']
 
@@ -122,32 +121,6 @@ app.post('/auth/register', async (req, res) => {
   }
 });
 
-// app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-
-// app.get('/auth/google/callback', (req, res, next) => {
-//     passport.authenticate('google', { session: false }, (err, user, info) => {
-//       if (err || !user) {
-//         console.log('Hit with err:', err)
-//         return res.status(401).json({ message: 'Authentication failed', error: err });
-//       }
-//       const token = jwt.sign(
-//         {
-//           id: user.id,
-//           email: user.email
-//         },
-//         process.env.JWT_SECRET,
-//         { expiresIn: '1h' }
-//       );
-//       console.log(token)
-
-//       return res.json({ token, user });
-//     })(req, res, next);
-// });
-
-// app.post('/auth/google/token', async (req, res) => {
-//   const { token } = req.body;
-//   const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
 //   try {
 //     const ticket = await client.verifyIdToken({
 //       idToken: token,
@@ -188,33 +161,6 @@ app.post('/auth/register', async (req, res) => {
 // });
 
 
-//SASHI
-// app.get('/', (req, res) => {
-//   const url = oauth2Client.generateAuthUrl({
-//     access_type: "offline",
-//     scope: 'https://www.googleapis.com/auth/calendar',
-//     prompt: "consent"
-//   })
-//   res.redirect(url)
-// })
-
-
-// app.get('/', async (req, res) => {
-//   const code = req.query.code
-//   oauth2Client.getToken(code, (err, tokens) => {
-//     if (err) {
-//       console.error('Couldnt get tokens', err)
-//       res.send("Error")
-//       return
-//     }
-//     oauth2Client.setCredentials(tokens)
-//     res.send("Successfully logged in")
-//   })
-// });
-
-
-
-
 
 
 app.get('/', async (req, res) => {
@@ -240,6 +186,172 @@ app.get('/', async (req, res) => {
     res.send("❌ Error during authentication.");
   }
 });
+
+// app.get('/', async (req, res) => {
+//   const code = req.query.code;
+
+//   if (!code) {
+//     const url = oauth2Client.generateAuthUrl({
+//       access_type: "offline",
+//       scope: 'https://www.googleapis.com/auth/calendar',
+//       prompt: "consent"
+//     });
+//     return res.redirect(url);
+//   }
+
+//   try {
+//     const { tokens } = await oauth2Client.getToken(code);
+//     oauth2Client.setCredentials(tokens);
+
+
+//     console.log('Tokens received:', tokens);
+
+//     const payload = {
+//       email: tokens.email,
+//       access_token: tokens.access_token,
+//       refresh_token: tokens.refresh_token
+//     };
+
+//     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+
+//     res.json({
+//       message: "✅ Successfully authenticated with Google Calendar!",
+//       token: token
+//     });
+//   } catch (err) {
+//     console.error('Error getting tokens:', err);
+//     res.send("❌ Error during authentication. Please try again.");
+//   }
+// });
+
+
+app.get('/calendars', (req, res) => {
+  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+  calendar.calendarList.list({}, (err, result) => {
+    if (err) {
+      console.error('Error fetching calendar list', err);
+      return res.send('Error fetching calendars');
+    }
+
+    const calendars = result.data.items.map(cal => ({
+      id: cal.id,
+      summary: cal.summary,
+    }));
+
+    res.json(calendars);
+  });
+});
+
+
+function verifyToken(req, res, next) {
+  const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
+
+  if (!token) {
+    return res.status(403).send("❌ No token provided");
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).send("❌ Invalid or expired token");
+    }
+    req.user = decoded;
+    next();
+  });
+}
+
+app.get("/add-event", async (req, res) => {
+  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+  await calendar.events.insert({
+    calendarId: "primary",
+    requestBody: {
+      summary: "This is a test event",
+      description: "Blaaaaaahhhhhhhhhh",
+      start: {
+        dateTime: "2025-04-23 15:48:00+03"
+      },
+      end: {
+        dateTime: "2025-04-24 15:48:00+03"
+      }
+    }
+  })
+
+  res.send({
+    msg: "Done",
+  })
+})
+
+
+function verifyToken(req, res, next) {
+  const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
+
+  if (!token) {
+    return res.status(403).send("❌ No token provided");
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).send("❌ Invalid or expired token");
+    }
+    req.user = decoded;
+    next();
+  });
+}
+
+function verifyToken(req, res, next) {
+  const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
+
+  if (!token) {
+    return res.status(403).send("❌ No token provided");
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).send("❌ Invalid or expired token");
+    }
+    req.user = decoded;
+    next();
+  });
+}
+
+app.get("/add-event", verifyToken, async (req, res) => {
+  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+  if (req.user && req.user.access_token) {
+    oauth2Client.setCredentials({
+      access_token: req.user.access_token,
+      refresh_token: req.user.refresh_token,
+    });
+
+    try {
+      await calendar.events.insert({
+        calendarId: "primary",
+        requestBody: {
+          summary: "This is a test event",
+          description: "Blaaaaaahhhhhhhhhh",
+          start: {
+            dateTime: "2025-04-23T15:48:00+03:00"
+          },
+          end: {
+            dateTime: "2025-04-24T15:48:00+03:00"
+          }
+        }
+      });
+
+      res.send({
+        msg: "✅ Event created successfully",
+      });
+    } catch (err) {
+      console.error('Error creating event:', err);
+      res.status(500).send('❌ Failed to create event');
+    }
+  } else {
+    res.status(403).send("❌ No valid access token found in JWT");
+  }
+});
+
+
 
 
 
@@ -760,7 +872,7 @@ async function markAsRead(ws, data) {
 app.get('/events/getEvents', authenticateJWT, async (req, res) => {
   const month = parseInt(req.query.month)
   const year = parseInt(req.query.year)
-  if(!month || !year) {
+  if (!month || !year) {
     res.status(400).json({ error: "Please provide month and year." })
   }
 
@@ -768,7 +880,7 @@ app.get('/events/getEvents', authenticateJWT, async (req, res) => {
   startDate.setHours(0, 0, 0, 0)
   const endDate = new Date(year, month + 1, 0)
   endDate.setHours(23, 59, 59, 999)
-  
+
   try {
     const events = await Event.findAll({
       where: {
@@ -790,7 +902,7 @@ app.get('/events/getEvents', authenticateJWT, async (req, res) => {
 
     res.status(200).json({ events })
   }
-  catch(err) {
+  catch (err) {
     res.status(500).json({ error: "Failed to fetch events" })
   }
 })
