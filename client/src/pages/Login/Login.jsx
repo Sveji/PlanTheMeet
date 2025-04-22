@@ -10,7 +10,7 @@ const Login = () => {
 
     // Redirects user if they are already logged in
     useEffect(() => {
-       if(access) navigate('/')
+        if (access) navigate('/')
     }, [access])
 
 
@@ -37,14 +37,14 @@ const Login = () => {
 
         console.log(response)
 
-        if(response.status == 200) {
+        if (response.status == 200) {
             localStorage.setItem('access', response.data.token)
             setAccess(response.data.token)
             navigate('/')
         }
 
-        if(response.status == 401) setError(response.response.data.message)
-        if(response.status == 500) setError(response.response.data.error)
+        if (response.status == 401) setError(response.response.data.message)
+        if (response.status == 500) setError(response.response.data.error)
     }
 
 
@@ -61,18 +61,18 @@ const Login = () => {
 
         console.log(response)
 
-        if(response.status == 200) {
+        if (response.status == 200) {
             localStorage.setItem('access', response.data.token)
             setAccess(response.data.token)
             navigate('/')
         }
-        // const res = await fetch('http://127.0.0.1:5000/auth/google/token', {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({ token })
-        // });
-        // const result = await res.json()
-        // console.log(res);
+        const res = await fetch('http://127.0.0.1:5000/auth/google', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+        });
+        const result = await res.json()
+        console.log(res);
     }
 
     const handleGoogleLoginFailure = async () => {
@@ -102,12 +102,12 @@ const Login = () => {
             />
             <button type="submit">Login</button>
 
-                <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH2}>
-                    <GoogleLogin
-                        onSuccess={handleGoogleLoginSuccess}
-                        onError={handleGoogleLoginFailure}
-                    />
-                </GoogleOAuthProvider>
+            <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH2}>
+                <GoogleLogin
+                    onSuccess={handleGoogleLoginSuccess}
+                    onError={handleGoogleLoginFailure}
+                />
+            </GoogleOAuthProvider>
         </form>
     )
 }
