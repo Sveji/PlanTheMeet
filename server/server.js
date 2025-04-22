@@ -758,16 +758,22 @@ async function markAsRead(ws, data) {
 }
 
 app.get('/events/getEvents', authenticateJWT, async (req, res) => {
+  const day = parseInt(req.query.day)
   const month = parseInt(req.query.month)
   const year = parseInt(req.query.year)
   if(!month || !year) {
     res.status(400).json({ error: "Please provide month and year." })
   }
 
-  const startDate = new Date(year, month, 1)
+  let startDate = new Date(year, month, 1)
   startDate.setHours(0, 0, 0, 0)
-  const endDate = new Date(year, month + 1, 0)
+  let endDate = new Date(year, month + 1, 0)
   endDate.setHours(23, 59, 59, 999)
+
+  if(day) {
+    startDate.setDate(day)
+    endDate.setDate(day)
+  }
   
   try {
     const events = await Event.findAll({
