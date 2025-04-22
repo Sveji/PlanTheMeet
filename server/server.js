@@ -172,7 +172,11 @@ app.get('/', async (req, res) => {
 
     const url = oauth2Client.generateAuthUrl({
       access_type: "offline",
-      scope: 'https://www.googleapis.com/auth/calendar',
+      scope: [
+        'https://www.googleapis.com/auth/calendar',
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/userinfo.email'
+      ].join(' '),
       prompt: "consent"
     });
     return res.redirect(url);
@@ -182,7 +186,40 @@ app.get('/', async (req, res) => {
   try {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
-    res.send("Successfully authenticated with Google Calendar!");
+
+    const { data: profile } = await oauth2Client.request({
+      url: 'https://www.googleapis.com/oauth2/v3/userinfo',
+    });
+
+    const [user, created] = await User.findOrCreate({
+      where: { email: profile.email },
+      defaults: {
+        googleId: profile.sub,
+        firstName: profile.given_name,
+        familyName: profile.family_name,
+        email: profile.email,
+        photo: profile.picture,
+        password: null
+      }
+    });
+
+    const jwtToken = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({
+      message: "✅ Successfully authenticated!",
+      token: jwtToken,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        familyName: user.familyName,
+        email: user.email,
+        photo: user.photo
+      }
+    });
   } catch (err) {
     console.error('Error getting tokens:', err);
     res.send("Error during authentication.");
