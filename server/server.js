@@ -62,7 +62,7 @@ function authenticateJWT(req, res, next) {
 
   const token = authHeader.split(' ')[1];
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err) return res.sendStatus(401);
     req.user = user;
     next();
   });
@@ -77,13 +77,13 @@ app.post('/auth/login', async (req, res) => {
   try {
     const user = await User.findOne({ where: { email } });
     if (!user || !user.password) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '100h' });
 
     res.json({ token, user });
   } catch (err) {
@@ -870,15 +870,16 @@ async function markAsRead(ws, data) {
 }
 
 app.get('/events/getEvents', authenticateJWT, async (req, res) => {
+  const day = parseInt(req.query.day)
   const month = parseInt(req.query.month)
   const year = parseInt(req.query.year)
   if (!month || !year) {
     res.status(400).json({ error: "Please provide month and year." })
   }
 
-  const startDate = new Date(year, month, 1)
+  let startDate = new Date(year, month, 1)
   startDate.setHours(0, 0, 0, 0)
-  const endDate = new Date(year, month + 1, 0)
+  let endDate = new Date(year, month + 1, 0)
   endDate.setHours(23, 59, 59, 999)
 
   try {
