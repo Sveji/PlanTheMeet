@@ -63,7 +63,7 @@ function authenticateJWT(req, res, next) {
 
   const token = authHeader.split(' ')[1];
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err) return res.sendStatus(401);
     req.user = user;
     next();
   });
@@ -78,13 +78,13 @@ app.post('/auth/login', async (req, res) => {
   try {
     const user = await User.findOne({ where: { email } });
     if (!user || !user.password) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '100h' });
 
     res.json({ token, user });
   } catch (err) {

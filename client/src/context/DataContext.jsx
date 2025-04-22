@@ -16,6 +16,15 @@ const DataProvider = ({ children }) => {
 
 
 
+    // Removes the user's information from local storage and redirects to the login page
+    const handleLogOut = () => {
+        localStorage.removeItem('access')
+        setAccess(null)
+        navigate('/login')
+    }
+
+
+
     // Sets the url for the backend server
     axios.defaults.baseURL = 'http://127.0.0.1:5000/'
 
@@ -40,8 +49,12 @@ const DataProvider = ({ children }) => {
                 response = await axios[method](url, body, config);
             }
 
+            if(response.status == 401) handleLogOut()
+
             if(response) return response
         } catch(err) {
+            if(err.status == 401) handleLogOut()
+
             return err
         }
     }
