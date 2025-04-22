@@ -224,6 +224,51 @@ app.get('/', async (req, res) => {
   }
 });
 
+app.post('/auth/google', async (req, res) => {
+  const { code } = req.body;
+
+  try {
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+
+    const { data: profile } = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` }
+    });
+
+    const [user, created] = await User.findOrCreate({
+      where: { email: profile.email },
+      defaults: {
+        googleId: profile.sub,
+        firstName: profile.given_name,
+        familyName: profile.family_name,
+        email: profile.email,
+        photo: profile.picture,
+        password: null
+      }
+    });
+
+    const jwtToken = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({
+      token: jwtToken,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        email: user.email,
+        photo: user.photo
+      }
+    });
+
+  } catch (err) {
+    console.error("Google Auth Error:", err);
+    res.status(500).json({ error: "Google login failed" });
+  }
+});
+
 // app.get('/', async (req, res) => {
 //   const code = req.query.code;
 
