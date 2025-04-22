@@ -7,7 +7,7 @@ const Nav = () => {
     const { handleLogOut } = useContext(DataContext);
 
     const handleLogoutClick = () => {
-        handleLogOut
+        handleLogOut()
         console.log("Logout clicked");
 
 
