@@ -226,48 +226,85 @@ app.get('/', async (req, res) => {
   }
 });
 
-app.post('/auth/google', async (req, res) => {
-  const { code } = req.body;
+// app.post('/auth/google', async (req, res) => {
+//   const { code } = req.body;
+
+//   try {
+//     const { tokens } = await oauth2Client.getToken(code);
+//     oauth2Client.setCredentials(tokens);
+
+//     console.log(tokens)
+
+//     const { data: profile } = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+//       headers: { Authorization: `Bearer ${tokens.access_token}` }
+//     });
+
+//     const [user, created] = await User.findOrCreate({
+//       where: { email: profile.email },
+//       defaults: {
+//         googleId: profile.sub,
+//         firstName: profile.given_name,
+//         familyName: profile.family_name,
+//         email: profile.email,
+//         photo: profile.picture,
+//         password: null
+//       }
+//     });
+
+//     const jwtToken = jwt.sign(
+//       { id: user.id, email: user.email },
+//       process.env.JWT_SECRET,
+//       { expiresIn: '1h' }
+//     );
+
+//     res.json({
+//       token: jwtToken,
+//       user: {
+//         id: user.id,
+//         firstName: user.firstName,
+//         email: user.email,
+//         photo: user.photo
+//       }
+//     });
+
+//   } catch (err) {
+//     console.error("Google Auth Error:", err);
+//     res.status(500).json({ error: "Google login failed" });
+//   }
+// });
+
+app.post('/auth/google/token', async (req, res) => {
+  const { token } = req.body;
+  const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
   try {
-    const { tokens } = await oauth2Client.getToken(code);
-    oauth2Client.setCredentials(tokens);
-
-    const { data: profile } = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: `Bearer ${tokens.access_token}` }
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
 
-    const [user, created] = await User.findOrCreate({
-      where: { email: profile.email },
-      defaults: {
-        googleId: profile.sub,
-        firstName: profile.given_name,
-        familyName: profile.family_name,
-        email: profile.email,
-        photo: profile.picture,
-        password: null
-      }
-    });
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, given_name, family_name, picture } = payload;
 
-    const jwtToken = jwt.sign(
-      { id: user.id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
+    let user = await User.findOne({ where: { googleId } });
 
-    res.json({
-      token: jwtToken,
-      user: {
-        id: user.id,
-        firstName: user.firstName,
-        email: user.email,
-        photo: user.photo
-      }
-    });
+    if (!user) {
+      user = await User.create({
+        googleId,
+        email,
+        firstName: given_name,
+        familyName: family_name,
+        photo: picture,
+      });
+    }
 
-  } catch (err) {
-    console.error("Google Auth Error:", err);
-    res.status(500).json({ error: "Google login failed" });
+    const jwtToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({ token: jwtToken, user });
+
+  } catch (error) {
+    console.error('Google token verify error', error);
+    res.status(401).json({ error: 'Invalid Google token' });
   }
 });
 
