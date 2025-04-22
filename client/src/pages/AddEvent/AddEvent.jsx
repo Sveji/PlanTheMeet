@@ -19,6 +19,14 @@ const AddEvent = () => {
     const [date, setDate] = useState(new Date())
     const [season, setSeason] = useState('winter')
 
+    // useEffect(() => {
+    //     const fetching = async () => {
+    //         const response = await crud({
+
+    //         })
+    //     }
+    // })
+
 
 
 
