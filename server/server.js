@@ -498,12 +498,11 @@ async function addEvent(ws, data) {
     date,
     time,
     location,
-    participants,
-    creatorId
+    participants
   } = data;
 
   try {
-    const creator = await User.findByPk(creatorId);
+    const creator = await User.findByPk(ws.user.id);
     if (!creator) {
       return ws?.send?.(JSON.stringify({ type: 'error', message: 'Creator not found' }));
     }
@@ -556,7 +555,7 @@ async function addEvent(ws, data) {
       description,
       datetime: eventDatetime,
       location,
-      userId: creatorId,
+      userId: ws.user.id,
       invitedUserIds: participants,
       conformedUserIds: [],
     });

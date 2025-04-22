@@ -4,19 +4,35 @@ import { DataContext } from "../../context/DataContext"
 import "../MyCalendar/myCalendar.less"
 import FormBox from "./components/FormBox"
 import IMG from "../../img/jake.jpg"
+import { useParams } from "react-router-dom"
 
 
 
 const AddEvent = () => {
     // Gets global data from the context
-    const { getSeason } = useContext(DataContext)
+    const { getSeason, selectedFriends, setSelectedFriends } = useContext(DataContext)
 
 
 
 
 
+    const dateString = useParams().date
     const [date, setDate] = useState(new Date())
     const [season, setSeason] = useState('winter')
+
+
+
+    // Sets the date on init
+    useEffect(() => {
+        if(dateString) {
+            const str = dateString.split(['.'])
+            const day = parseInt(str[0])
+            const month = parseInt(str[1])
+            const year = parseInt(str[2])
+            setDate(new Date(year, month, day))
+            console.log(new Date(year, month - 1, day))
+        }
+    }, [dateString])
 
 
 
@@ -33,11 +49,11 @@ const AddEvent = () => {
                 <div className="title-box">
                     <h2>Add an event</h2>
                     <div className="date-box">
-                        {date.getDate() < 10 ? `0${date.getDate()}` : `${date.getDate()}`}.{date.getMonth() + 1 < 10 ? `0${date.getMonth() + 1}` : `${date.getMonth() + 1}`}.{date.getFullYear()}
+                        {dateString}
                     </div>
                 </div>
 
-                <FormBox />
+                <FormBox date={date} />
             </div >
 
             <div className="recomendation">
