@@ -18,7 +18,7 @@ const { Op, where } = require('sequelize');
 const { OAuth2Client, auth } = require('google-auth-library');
 const axios = require('axios');
 const { google } = require('googleapis');
-const { oauth2Client } = require('./auth/google');
+// const { oauth2Client } = require('./auth/google');
 
 const alllowedCORS = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003']
 
