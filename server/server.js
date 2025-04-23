@@ -453,7 +453,7 @@ app.post("/add-event",authenticateJWT , async (req, res) => {
     end } = req.body
     const user = req.user
 
-  if (!summary || !description || !start || !end) {
+  if (!summary || !description || !start) {
     return res.status(400).send({ error: "Missing requirement fields" })
   }
 
@@ -509,7 +509,7 @@ app.post("/add-event",authenticateJWT , async (req, res) => {
 app.get('/events/getEvents', authenticateJWT, async (req, res) => {
   const month = parseInt(req.query.month);
   const year = parseInt(req.query.year);
-
+  console.log(month)
   if (!month || !year) {
     return res.status(400).json({ error: "Please provide both month and year." });
   }
@@ -522,11 +522,11 @@ app.get('/events/getEvents', authenticateJWT, async (req, res) => {
 
   try {
     const events = await Event.findAll({
-      where: {
-        datetime: {
-          [Op.between]: [startDate, endDate]
-        }
-      }
+      // where: {
+      //   datetime: {
+      //     [Op.between]: [startDate, endDate]
+      //   }
+      // }
     });
 
     res.status(200).json({ events });
