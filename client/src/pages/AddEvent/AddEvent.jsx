@@ -4,7 +4,7 @@ import { DataContext } from "../../context/DataContext"
 import "../MyCalendar/myCalendar.less"
 import FormBox from "./components/FormBox"
 import IMG from "../../img/jake.jpg"
-import { useParams } from "react-router-dom"
+import { redirect, useParams } from "react-router-dom"
 import RecommendEvent from "./components/RecommendEvent"
 
 
@@ -13,7 +13,7 @@ const AddEvent = () => {
 
 
     // Gets global data from the context
-    const { crud, getSeason, selectedFriends, setSelectedFriends } = useContext(DataContext)
+    const { crud, getSeason, selectedFriends, setSelectedFriends,navigate } = useContext(DataContext)
 
     const [summary, setSummary] = useState("");
     const [description, setDescription] = useState("")
@@ -62,6 +62,7 @@ const AddEvent = () => {
                 }
             })
             console.log("Event added: ", response);
+            navigate('/')
         } catch (error) {
             console.error("Error adding event:", error)
         }
