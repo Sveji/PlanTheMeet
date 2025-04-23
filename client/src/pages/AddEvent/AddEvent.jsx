@@ -13,7 +13,7 @@ const AddEvent = () => {
 
 
     // Gets global data from the context
-    const { getSeason, selectedFriends, setSelectedFriends, crud } = useContext(DataContext)
+    const { crud, getSeason, selectedFriends, setSelectedFriends } = useContext(DataContext)
 
     const [summary, setSummary] = useState("");
     const [description, setDescription] = useState("")

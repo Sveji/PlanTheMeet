@@ -87,10 +87,6 @@ const Login = () => {
             setAccess(response.data.token)
             navigate('/')
         }
-
-
-
-        console.log(response)
     }
 
     const handleGoogleLoginFailure = async () => {
