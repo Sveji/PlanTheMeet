@@ -170,6 +170,15 @@ const DataProvider = ({ children }) => {
 
 
 
+    // Holds the friends the user selected
+    const [selectedFriends, setSelectedFriends] = useState([])
+
+    useEffect(() => {
+        console.log(selectedFriends)
+    }, [selectedFriends])
+
+
+
     return (
         <DataContext.Provider value={{
             navigate,
@@ -181,6 +190,7 @@ const DataProvider = ({ children }) => {
             getFriendColor,
             notifications,
             friendReqError,
+            selectedFriends, setSelectedFriends,
             handleLogOut
         }}>
             {children}

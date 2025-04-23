@@ -8,7 +8,7 @@ import { DataContext } from "../../../../context/DataContext";
 
 const DayInfo = ({ ref, selected, setSelected }) => {
     // Gets global data from the context
-    const { crud } = useContext(DataContext)
+    const { crud, navigate } = useContext(DataContext)
 
 
 
@@ -66,7 +66,7 @@ const DayInfo = ({ ref, selected, setSelected }) => {
                 </div>
                 <div className="info-box">
                     <DuplicateBox className="duplicate-btn">
-                        <button className="btn">Add new event</button>
+                        <button className="btn" onClick={() => navigate(`/add-event/${formatDate(selected)}`)}>Add new event</button>
                     </DuplicateBox>
 
                     {

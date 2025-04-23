@@ -8,7 +8,7 @@ import { DataContext } from "../../../../context/DataContext";
 
 const Friends = ({ ref }) => {
     // Gets global data from the context
-    const { getFriendColor, crud } = useContext(DataContext)
+    const { selectedFriends, setSelectedFriends, getFriendColor, crud } = useContext(DataContext)
 
 
 
@@ -19,7 +19,6 @@ const Friends = ({ ref }) => {
 
     // Holds the user's friends
     const [friends, setFriends] = useState([])
-    const [selectedFriends, setSelectedFriends] = useState([])
 
 
 
@@ -37,7 +36,7 @@ const Friends = ({ ref }) => {
                 const friendsArr = response.data.map(friend => {
                     return {
                         ...friend,
-                        selected: false
+                        selected: selectedFriends.find(selectedFriend => selectedFriend.id === friend.id) ? true : false
                     }
                 })
                 setFriends(friendsArr)
@@ -50,8 +49,8 @@ const Friends = ({ ref }) => {
 
 
     // Adds a user to the selected friends array
-    const handleSelectFriend = (id) => {
-        const index = friends.findIndex(friend => friend.id === id)
+    const handleSelectFriend = (friendToSelect) => {
+        const index = friends.findIndex(friend => friend.id === friendToSelect.id)
         const newFriend = {
             ...friends[index],
             selected: !friends[index].selected
@@ -60,7 +59,15 @@ const Friends = ({ ref }) => {
         newFriends[index] = newFriend
         setFriends(newFriends)
 
-        // console.log(newFriends)
+        const selectedIndex = selectedFriends.findIndex(friend => friend.id === friendToSelect.id)
+        if(selectedIndex >= 0) {
+            let newSelected = [...selectedFriends]
+            newSelected.splice(selectedIndex, 1)
+            setSelectedFriends(newSelected)
+        }
+        else {
+            setSelectedFriends([...selectedFriends, friendToSelect])
+        }
     }
 
 
@@ -84,7 +91,7 @@ const Friends = ({ ref }) => {
                     friends.length > 0 ?
                     friends.map((friend, i) => (
                         <Friend
-                            onClick={() => handleSelectFriend(friend.id)}
+                            onClick={() => handleSelectFriend(friend)}
                             key={i}
                             username={`${friend.firstName} ${friend.familyName}`}
                             color={getFriendColor(i)}

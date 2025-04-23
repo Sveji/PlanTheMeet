@@ -25,7 +25,7 @@ function App() {
           <Route path="/" element={<MyCalendar />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/add-event" element={<AddEvent />} />
+          <Route path="/add-event/:date" element={<AddEvent />} />
           <Route path="/friends" element={<FriendsPage />} />
           <Route path="/chat" element={<Chat />} >
           
