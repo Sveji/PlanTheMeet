@@ -82,6 +82,14 @@ const Login = () => {
             }
         })
 
+        if (response.status == 200) {
+            localStorage.setItem('access', response.data.token)
+            setAccess(response.data.token)
+            navigate('/')
+        }
+
+
+
         console.log(response)
     }
 

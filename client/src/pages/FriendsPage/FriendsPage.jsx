@@ -18,13 +18,14 @@ const FriendsPage = () => {
     useEffect(() => {
         const fetching = async () => {
             const response = await crud({
+
                 url: '/getFriends',
                 method: 'get'
             })
 
             console.log(response)
 
-            if(response.status == 200) {
+            if (response.status == 200) {
                 setFriends(response.data)
             }
         }
@@ -42,7 +43,7 @@ const FriendsPage = () => {
     // Sends a friend request through the web socket server
     const addFriend = (e) => {
         e.preventDefault()
-        
+
         socketSend({
             type: 'addFriend',
             email: friendAdd
@@ -56,11 +57,11 @@ const FriendsPage = () => {
             <h3>Your friends</h3>
             {
                 friends.length > 0 ?
-                friends.map(friend => (
-                    <Friend firstName={friend.firstName} familyName={friend.familyName} />
-                ))
-                :
-                <p>You have no friends yet :(</p>
+                    friends.map(friend => (
+                        <Friend firstName={friend.firstName} familyName={friend.familyName} />
+                    ))
+                    :
+                    <p>You have no friends yet :</p>
             }
 
             <h3>Add friends</h3>
