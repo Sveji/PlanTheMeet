@@ -401,8 +401,9 @@ app.post("/add-event", async (req, res) => {
     start,
     end } = req.body
 
+    console.log('summary', summary,'description', description,'start', start,'end', end)
   if (!summary || !description || !start || !end) {
-    returnres.status(400).send({ error: "Missing requirement fields" })
+    return res.status(400).send({ error: "Missing requirement fields" })
   }
 
   const calendar = google.calendar({ version: 'v3', auth: oauth2Client });

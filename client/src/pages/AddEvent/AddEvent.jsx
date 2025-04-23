@@ -13,7 +13,7 @@ const AddEvent = () => {
 
 
     // Gets global data from the context
-    const { getSeason, selectedFriends, setSelectedFriends } = useContext(DataContext)
+    const { crud, getSeason, selectedFriends, setSelectedFriends } = useContext(DataContext)
 
     const [summary, setSummary] = useState("");
     const [description, setDescription] = useState("")
@@ -38,12 +38,19 @@ const AddEvent = () => {
         }
     }, [startDate, startTime]);
 
+    useEffect(() => {
+        if (endDate && endTime) {
+            const isoString = new Date(`${endDate}T${endTime}`).toISOString();
+            setEnd(isoString);
+        }
+    }, [endDate, endTime]);
+
 
     const handleSubmit = async () => {
         try {
             const response = await crud({
                 url: '/add-event',
-                method: 'POST',
+                method: 'post',
                 body: {
                     summary,
                     description,
