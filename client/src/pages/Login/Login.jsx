@@ -98,28 +98,28 @@ const Login = () => {
     const loginWithGoogle = useGoogleLogin({
         flow: 'auth-code',
         onSuccess: async (response) => {
-          console.log("Google code login response:", response);
-          const { code } = response;
-      
-          // Send this code to your backend
-          const res = await crud({
-            url: '/auth/google/code-exchange', // new backend route
-            method: 'post',
-            body: { code }
-          });
-      
-          if (res.status === 200) {
-            localStorage.setItem('access', res.data.token);
-            setAccess(res.data.token);
-            navigate('/');
-          } else {
-            console.error("Login failed", res);
-          }
+            console.log("Google code login response:", response);
+            const { code } = response;
+
+            // Send this code to your backend
+            const res = await crud({
+                url: '/auth/google/code-exchange', // new backend route
+                method: 'post',
+                body: { code }
+            });
+
+            if (res.status === 200) {
+                localStorage.setItem('access', res.data.token);
+                setAccess(res.data.token);
+                navigate('/');
+            } else {
+                console.error("Login failed", res);
+            }
         },
         onError: () => console.error("Google login failed"),
         scope: 'openid email profile https://www.googleapis.com/auth/calendar',
         prompt: 'consent',
-      });
+    });
 
 
     return (
@@ -131,33 +131,37 @@ const Login = () => {
                 <p className="error">{error}</p>
             }
 
-            <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
-                className="inputs"
-            />
-            <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                className="inputs"
-            />
+            <h1>Log in</h1>
+            <div className="input-box">
+                <label htmlFor="">Email:</label>
+                <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Email"
+                    className="inputs"
+                />
+            </div>
+            <div className="input-box">
+                <label htmlFor="">Password:</label>
+                <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password"
+                    className="inputs"
+                />
+            </div>
+
             <button type="submit" className="btn">Login</button>
 
-
+            <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH2}>
                 <GoogleLogin
                     onSuccess={handleGoogleLoginSuccess}
                     onError={handleGoogleLoginFailure}
                 />
-                {/* <button className="btn google-login" onClick={() => loginWithGoogle()}>
-                    Sign in with Google
-                </button> */}
-            
+            </GoogleOAuthProvider>
         </form>
-        /* </GoogleOAuthProvider> */
     )
 }
 

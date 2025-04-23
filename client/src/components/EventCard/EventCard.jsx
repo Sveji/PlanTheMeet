@@ -4,7 +4,7 @@ import './eventsCard.less';
 import IMG from '../../img/jake.jpg';
 import DuplicateBox from '../DuplicateBox/DuplicateBox';
 
-const EventCard = ({ color = 'orange', event, info = 'info', image = IMG, date = '27.04.2025' }) => {
+const EventCard = ({ color = 'orange', event, info = 'info', image = IMG, date = '27.04.2025', location = 'Sofia Bulgaria' }) => {
     return (
         <div className={`card `}>
             <div className={`heading ${color}`}>

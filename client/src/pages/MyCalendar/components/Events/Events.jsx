@@ -1,7 +1,13 @@
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa6"
 import './events.less'
 import EventCard from '../../../../components/EventCard/EventCard.jsx'
-const Events = ({ date = '16 April' }) => {
+import { useContext } from "react"
+import { DataContext } from "../../../../context/DataContext.jsx"
+const Events = ({ date, name, info }) => {
+
+    const { crud } = useContext(DataContext)
+
+
 
 
     const getColor = (index) => {
@@ -27,6 +33,7 @@ const Events = ({ date = '16 April' }) => {
                                 key={i}
                                 event='TUESFest'
                                 color={getColor(i)}
+
                             />
                         ))
                     }
