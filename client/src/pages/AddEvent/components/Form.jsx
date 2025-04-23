@@ -12,8 +12,7 @@ const Form = ({
     endDate,
     setEndDate,
     endTime,
-    setEndTime,
-    handleSubmit
+    setEndTime
 }) => {
 
     return (<div className="form">
