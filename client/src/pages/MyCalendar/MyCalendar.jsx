@@ -72,13 +72,14 @@ const MyCalendar = () => {
             console.log(response)
 
             if (response.status == 200) {
-                setRecommendations(response.data)
-                console.log(recommendations)
+                const ress = response.data
+                setRecommendations(ress.events)
+                console.log(ress)
             }
         }
 
         fetching()
-    }, [])
+    }, [selected])
 
 
 
