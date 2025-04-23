@@ -75,7 +75,7 @@ const Login = () => {
         // const result = await res.json()
         // console.log(res);
         const response = await crud({
-            url: '/auth/google',
+            url: '/auth/google/token',
             method: 'post',
             body: {
                 token
@@ -83,6 +83,8 @@ const Login = () => {
         })
 
         console.log(response)
+        setAccess(response.data.token)
+
     }
 
     const handleGoogleLoginFailure = async () => {
