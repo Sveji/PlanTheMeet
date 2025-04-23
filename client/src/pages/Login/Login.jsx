@@ -54,7 +54,7 @@ const Login = () => {
         const token = credentials.credential;
         console.log('sending idToken:', token);
         const response = await crud({
-            url: '/auth/google/token',
+            url: '/auth/google',
             method: 'post',
             body: { token }
         })

@@ -21,7 +21,7 @@ const { google } = require('googleapis');
 const cheerio = require('cheerio');
 const alllowedCORS = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003']
 
-const oauth2Client = new google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECR)
+const oauth2Client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECR)
 
 
 //AUTHENTICATION
@@ -227,10 +227,19 @@ app.get('/', async (req, res) => {
 });
 
 app.post('/auth/google', async (req, res) => {
-  const { code } = req.body;
+  const { token } = req.body;
+  const code = token
+  console.log(code)
+  if (!code || typeof code !== 'string') {
+    return res.status(400).json({ 
+      error: "Invalid authorization code",
+      details: "Token is missing or malformed"
+    });
+  }
 
   try {
-    const { tokens } = await oauth2Client.getToken(code);
+    const { tokens } = await oauth2Client.getToken({code,
+      redirect_uri: 'http://localhost:3000/auth/google/callback'});
     oauth2Client.setCredentials(tokens);
 
     const { data: profile } = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
