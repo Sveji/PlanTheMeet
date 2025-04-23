@@ -51,6 +51,10 @@ const MyCalendar = () => {
 
 
     useEffect(() => {
+        if (!selected) {
+            console.log("returning")
+            return;
+        }
         const fetching = async () => {
 
             const formattedDate = selected.toISOString().split('T')[0];
@@ -77,7 +81,7 @@ const MyCalendar = () => {
             }
         }
 
-        fetching()
+        fetching();
     }, [])
 
 
