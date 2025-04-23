@@ -23,6 +23,14 @@ const User = sequelize.define('User', {
     type: DataTypes.ARRAY(DataTypes.INTEGER),
     defaultValue: [],
   },
+  accessToken: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  refreshToken: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
 });
 
 module.exports = User;

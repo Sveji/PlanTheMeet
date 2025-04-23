@@ -165,9 +165,8 @@ app.post('/auth/register', async (req, res) => {
 
 
 //GOOGLE LOGIN
-app.post('/', async (req, res) => {
+app.get('/', async (req, res) => {
   const code = req.query.code;
-
 
   if (!code) {
 
@@ -200,9 +199,18 @@ app.post('/', async (req, res) => {
         familyName: profile.family_name,
         email: profile.email,
         photo: profile.picture,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
         password: null
       }
     });
+
+    if (!created) {
+      await user.update({
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token || user.refreshToken, // preserve old if new not provided
+      });
+    }
 
     const jwtToken = jwt.sign(
       { id: user.id, email: user.email },
@@ -224,6 +232,49 @@ app.post('/', async (req, res) => {
   } catch (err) {
     console.error('Error getting tokens:', err);
     res.send("Error during authentication.");
+  }
+});
+
+app.post('/auth/google/code-exchange', async (req, res) => {
+  const { code } = req.body;
+
+  try {
+    const { tokens } = await oauth2Client.getToken({
+      code,
+      redirect_uri: 'http://localhost:5000/auth/google/code-exchange',
+    });
+    oauth2Client.setCredentials(tokens);
+
+    const { data: profile } = await oauth2Client.request({
+      url: 'https://www.googleapis.com/oauth2/v3/userinfo',
+    });
+
+    let user = await User.findOne({ where: { email: profile.email } });
+
+    if (!user) {
+      user = await User.create({
+        googleId: profile.sub,
+        email: profile.email,
+        firstName: profile.given_name,
+        familyName: profile.family_name,
+        photo: profile.picture,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+      });
+    } else {
+      await user.update({
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token || user.refreshToken,
+      });
+    }
+
+    const jwtToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({ token: jwtToken, user });
+
+  } catch (error) {
+    console.error("Google code exchange failed:", error);
+    res.status(500).json({ error: "Failed to exchange code" });
   }
 });
 
@@ -401,36 +452,52 @@ app.post("/add-event", authenticateJWT, async (req, res) => {
     description,
     start,
     end } = req.body
+  const user = req.user
 
-
-
-
-  console.log("Received body:", req.body);
-  console.log(oauth2Client)
-
-  if (!summary || !description || !start || !end) {
+  if (!summary || !description || !start) {
     return res.status(400).send({ error: "Missing requirement fields" })
   }
 
-  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+  // const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
   try {
-    await calendar.events.insert({
-      calendarId: "primary",
-      requestBody: {
-        summary,
-        description,
-        start: {
-          dateTime: start,
-        },
-        end: {
-          dateTime: end,
-        }
-      }
-    })
+    //   const user = await User.findByPk(req.user.id);
+    //   if (!user || !user.accessToken) {
+    //     return res.status(401).send({ error: "User not authenticated with Google" });
+    //   }
 
-    res.send({
-      msg: "Event created successfully",
-    })
+    //   // Step 2: Set token on oauth2Client
+    //   oauth2Client.setCredentials({
+    //     access_token: user.accessToken,
+    //     refresh_token: user.refreshToken // optional but recommended
+    //   });
+
+    //   // Step 3: Use Google Calendar API
+    //   const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+    //   await calendar.events.insert({
+    //     calendarId: "primary",
+    //     requestBody: {
+    //       summary,
+    //       description,
+    //       start: { dateTime: start },
+    //       end: { dateTime: end },
+    //     }
+    //   });
+
+    //   res.send({ msg: "Event created successfully" });
+
+
+    const event = await Event.create({
+      title: summary,
+      datetime: start,
+      userId: user.id,  // Assuming `userId` is the ID of the user creating the event
+      description: description || ''
+    });
+
+    // Send a success response with the created event
+    res.status(201).json({
+      message: 'Event created successfully!',
+      event
+    });
   } catch (error) {
     res.status(500).send({
       error: "An error occurred while creating the event",
@@ -443,7 +510,7 @@ app.post("/add-event", authenticateJWT, async (req, res) => {
 app.get('/events/getEvents', authenticateJWT, async (req, res) => {
   const month = parseInt(req.query.month);
   const year = parseInt(req.query.year);
-
+  console.log(month)
   if (!month || !year) {
     return res.status(400).json({ error: "Please provide both month and year." });
   }
@@ -456,11 +523,11 @@ app.get('/events/getEvents', authenticateJWT, async (req, res) => {
 
   try {
     const events = await Event.findAll({
-      where: {
-        datetime: {
-          [Op.between]: [startDate, endDate]
-        }
-      }
+      // where: {
+      //   datetime: {
+      //     [Op.between]: [startDate, endDate]
+      //   }
+      // }
     });
 
     res.status(200).json({ events });

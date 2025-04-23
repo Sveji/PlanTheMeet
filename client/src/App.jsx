@@ -9,10 +9,13 @@ import Nav from "./components/Nav/Nav"
 import FriendsPage from "./pages/FriendsPage/FriendsPage"
 import Chat from "./pages/Chat/Chat"
 import AlekTupalek from "./AlekTupalek"
+import { GoogleOAuthProvider } from '@react-oauth/google'
+ 
 
 function App() {
 
   return (
+            <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH2}>
     <BrowserRouter>
 
       <DataProvider>
@@ -37,6 +40,7 @@ function App() {
       </DataProvider>
 
     </BrowserRouter>
+</GoogleOAuthProvider>
   )
 }
 
