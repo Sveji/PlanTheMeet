@@ -450,7 +450,7 @@ app.get('/events/getEvents', authenticateJWT, async (req, res) => {
   try {
     const events = await Event.findAll({
       where: {
-        startTime: {
+        datetime: {
           [Op.between]: [startDate, endDate]
         }
       }
