@@ -75,7 +75,7 @@ const Login = () => {
         // const result = await res.json()
         // console.log(res);
         const response = await crud({
-            url: '/auth/google/token',
+            url: '/auth/google',
             method: 'post',
             body: {
                 token
