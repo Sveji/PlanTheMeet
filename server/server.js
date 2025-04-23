@@ -1341,9 +1341,9 @@ const apifyClient = new ApifyClient({
 app.get('/getRecommendations', async (req, res) => {
   try {
     // const { date, city = 'Sofia, Bulgaria' } = req.body
-    const date = req.query.date; // ✅ FIXED
+    const date = req.query.date; // ✅ FIXED\
     const city = req.query.city || 'Sofia, Bulgaria';
-
+    console.log("jifdofjds")
 
 
     if (!date || !date.match(/^\d{4}-\d{2}-\d{2}$/)) {
