@@ -2,6 +2,8 @@ import { useContext, useEffect, useState } from "react"
 import { DataContext } from "../../context/DataContext"
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google"
 import './login.less'
+import { useGoogleLogin } from '@react-oauth/google'
+
 
 const Login = () => {
     // Gets global data from the context
@@ -93,9 +95,35 @@ const Login = () => {
         console.log('Error')
     }
 
+    const loginWithGoogle = useGoogleLogin({
+        flow: 'auth-code',
+        onSuccess: async (response) => {
+          console.log("Google code login response:", response);
+          const { code } = response;
+      
+          // Send this code to your backend
+          const res = await crud({
+            url: '/auth/google/code-exchange', // new backend route
+            method: 'post',
+            body: { code }
+          });
+      
+          if (res.status === 200) {
+            localStorage.setItem('access', res.data.token);
+            setAccess(res.data.token);
+            navigate('/');
+          } else {
+            console.error("Login failed", res);
+          }
+        },
+        onError: () => console.error("Google login failed"),
+        scope: 'openid email profile https://www.googleapis.com/auth/calendar',
+        prompt: 'consent',
+      });
 
 
     return (
+        // <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH2}>
         <form className="login-form"
             onSubmit={(e) => handleSubmit(e)}>
             {
@@ -119,13 +147,17 @@ const Login = () => {
             />
             <button type="submit" className="btn">Login</button>
 
-            <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH2}>
+
                 <GoogleLogin
                     onSuccess={handleGoogleLoginSuccess}
                     onError={handleGoogleLoginFailure}
                 />
-            </GoogleOAuthProvider>
+                {/* <button className="btn google-login" onClick={() => loginWithGoogle()}>
+                    Sign in with Google
+                </button> */}
+            
         </form>
+        /* </GoogleOAuthProvider> */
     )
 }
 

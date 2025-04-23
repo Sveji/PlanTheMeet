@@ -51,6 +51,9 @@ const AddEvent = () => {
             const response = await crud({
                 url: '/add-event',
                 method: 'post',
+                header: {
+                    'Authorization': `Bearer ${localStorage.getItem('access')}`
+                },
                 body: {
                     summary,
                     description,

@@ -165,9 +165,8 @@ app.post('/auth/register', async (req, res) => {
 
 
 //GOOGLE LOGIN
-app.post('/', async (req, res) => {
+app.get('/', async (req, res) => {
   const code = req.query.code;
-
 
   if (!code) {
 
@@ -200,9 +199,18 @@ app.post('/', async (req, res) => {
         familyName: profile.family_name,
         email: profile.email,
         photo: profile.picture,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
         password: null
       }
     });
+    
+    if (!created) {
+      await user.update({
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token || user.refreshToken, // preserve old if new not provided
+      });
+    }
 
     const jwtToken = jwt.sign(
       { id: user.id, email: user.email },
@@ -224,6 +232,48 @@ app.post('/', async (req, res) => {
   } catch (err) {
     console.error('Error getting tokens:', err);
     res.send("Error during authentication.");
+  }
+});
+
+app.post('/auth/google/code-exchange', async (req, res) => {
+  const { code } = req.body;
+
+  try {
+    const { tokens } = await oauth2Client.getToken({code,
+      redirect_uri: 'http://localhost:5000/auth/google/code-exchange',
+    });
+    oauth2Client.setCredentials(tokens);
+
+    const { data: profile } = await oauth2Client.request({
+      url: 'https://www.googleapis.com/oauth2/v3/userinfo',
+    });
+
+    let user = await User.findOne({ where: { email: profile.email } });
+
+    if (!user) {
+      user = await User.create({
+        googleId: profile.sub,
+        email: profile.email,
+        firstName: profile.given_name,
+        familyName: profile.family_name,
+        photo: profile.picture,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+      });
+    } else {
+      await user.update({
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token || user.refreshToken,
+      });
+    }
+
+    const jwtToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({ token: jwtToken, user });
+
+  } catch (error) {
+    console.error("Google code exchange failed:", error);
+    res.status(500).json({ error: "Failed to exchange code" });
   }
 });
 
@@ -395,42 +445,58 @@ app.get('/all-events', async (req, res) => {
 
 
 
-app.post("/add-event", authenticateJWT, async (req, res) => {
+app.post("/add-event",authenticateJWT , async (req, res) => {
   const {
     summary,
     description,
     start,
     end } = req.body
-
-
-
-
-  console.log("Received body:", req.body);
-  console.log(oauth2Client)
+    const user = req.user
 
   if (!summary || !description || !start || !end) {
     return res.status(400).send({ error: "Missing requirement fields" })
   }
 
-  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+  // const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
   try {
-    await calendar.events.insert({
-      calendarId: "primary",
-      requestBody: {
-        summary,
-        description,
-        start: {
-          dateTime: start,
-        },
-        end: {
-          dateTime: end,
-        }
-      }
-    })
+  //   const user = await User.findByPk(req.user.id);
+  //   if (!user || !user.accessToken) {
+  //     return res.status(401).send({ error: "User not authenticated with Google" });
+  //   }
 
-    res.send({
-      msg: "Event created successfully",
-    })
+  //   // Step 2: Set token on oauth2Client
+  //   oauth2Client.setCredentials({
+  //     access_token: user.accessToken,
+  //     refresh_token: user.refreshToken // optional but recommended
+  //   });
+
+  //   // Step 3: Use Google Calendar API
+  //   const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+  //   await calendar.events.insert({
+  //     calendarId: "primary",
+  //     requestBody: {
+  //       summary,
+  //       description,
+  //       start: { dateTime: start },
+  //       end: { dateTime: end },
+  //     }
+  //   });
+
+  //   res.send({ msg: "Event created successfully" });
+
+
+    const event = await Event.create({
+      title: summary,
+      datetime: start,
+      userId: user.id,  // Assuming `userId` is the ID of the user creating the event
+      description: description || ''
+    });
+
+    // Send a success response with the created event
+    res.status(201).json({
+      message: 'Event created successfully!',
+      event
+    });
   } catch (error) {
     res.status(500).send({
       error: "An error occurred while creating the event",
@@ -1275,40 +1341,40 @@ app.get('/getRecommendations', async (req, res) => {
   try {
     const date = req.query.date; // Format: YYYY-MM-DD
     const city = req.query.city || 'Sofia, Bulgaria';
-
+    
     if (!date || !date.match(/^\d{4}-\d{2}-\d{2}$/)) {
       return res.status(400).json({ error: 'Invalid date format. Please use YYYY-MM-DD format.' });
     }
-
+    
     const formattedDate = new Date(date).toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
-
+    
     console.log(`Searching for events in ${city} on ${date}...`);
-
+    
     // Step 1: Fetch real events from Apify Facebook scraper
     const apifyEvents = await fetchApifyEvents(city, date);
     console.log(`Found ${apifyEvents.length} real events from Apify`);
-
+    
     // Step 2: Get AI-generated recommendations to fill gaps
     const aiEvents = await fetchAIRecommendations(city, formattedDate, 20);
     console.log(`Generated ${aiEvents.length} AI recommendations`);
-
+    
     // Step 3: Combine events and format response
     const combinedEvents = formatEvents([...apifyEvents, ...aiEvents]).slice(0, 30);
-
+    
     res.json({
       date: formattedDate,
       city,
       events: combinedEvents
     });
-
+    
   } catch (error) {
     console.error('Error generating recommendations:', error);
-    res.status(500).json({
+    res.status(500).json({ 
       error: 'Failed to generate recommendations',
       message: error.message
     });
@@ -1320,17 +1386,17 @@ app.get('/getRecommendations', async (req, res) => {
  */
 async function fetchApifyEvents(city, date) {
   const searchQuery = `${city} ${date}`;
-
+  
   const input = {
     "searchQueries": [searchQuery],
     "startUrls": [],
     "maxEvents": 15
   };
-
+  
   try {
     const run = await apifyClient.actor("UZBnerCFBo5FgGouO").call(input);
     const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems();
-
+    
     return items.filter(event => {
       // Filter out events that don't match our date
       const eventDate = new Date(event.utcStartDate);
@@ -1367,28 +1433,28 @@ async function fetchApifyEvents(city, date) {
  */
 async function fetchAIRecommendations(city, formattedDate, count) {
   if (count <= 0) return [];
-
+  
   try {
     // Create an assistant with web browsing capabilities
     const assistant = await openai.beta.assistants.create({
       name: "Event Finder",
       instructions: "You are an assistant that searches for events and activities. Return only valid JSON that can be parsed without errors.",
       model: "gpt-4.1",
-      //   tools: [{
-      //     // type: "web_search_preview",
-      //     user_location: {
-      //         type: "approximate",
-      //         country: "BG",
-      //         city: "Sofia",
-      //         region: "Sofia"
-      //     },
-      //     search_context_size: "medium",
-      // }],
+    //   tools: [{
+    //     // type: "web_search_preview",
+    //     user_location: {
+    //         type: "approximate",
+    //         country: "BG",
+    //         city: "Sofia",
+    //         region: "Sofia"
+    //     },
+    //     search_context_size: "medium",
+    // }],
     });
-
+    
     // Create a thread
     const thread = await openai.beta.threads.create();
-
+    
     // Add a message to the thread
     await openai.beta.threads.messages.create(thread.id, {
       role: "user",
@@ -1409,66 +1475,66 @@ async function fetchAIRecommendations(city, formattedDate, count) {
       
       Return the data in valid JSON format with an 'events' array containing all events.`
     });
-
+    
     // Run the assistant
     const run = await openai.beta.threads.runs.create(thread.id, {
       assistant_id: assistant.id
     });
-
+    
     // Poll for the run completion
     let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-
+    
     // Wait for the assistant to complete
     while (runStatus.status !== 'completed') {
       // If run requires action (like function calling), handle it here
       if (runStatus.status === 'requires_action') {
         console.log("Run requires action");
       }
-
-
+      
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
       runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
     }
-
+    
     // Get the messages from the thread
     const messages = await openai.beta.threads.messages.list(thread.id);
-
+    
     // Get the last message from the assistant
     const lastMessage = messages.data
       .filter(message => message.role === 'assistant')
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-
+    
     // Extract the content of the message
     const responseContent = lastMessage.content[0].text.value;
-
+    
     // Parse JSON from the response
     let events = [];
     try {
       // Try to parse the entire response as JSON
-      const jsonMatch = responseContent.match(/```json\n([\s\S]*?)\n```/) ||
-        responseContent.match(/{[\s\S]*}/);
-
-      const jsonString = jsonMatch ?
-        (jsonMatch[1] || jsonMatch[0]) :
-        responseContent;
-
+      const jsonMatch = responseContent.match(/```json\n([\s\S]*?)\n```/) || 
+                         responseContent.match(/{[\s\S]*}/);
+                         
+      const jsonString = jsonMatch ? 
+                         (jsonMatch[1] || jsonMatch[0]) : 
+                         responseContent;
+                         
       const parsedData = JSON.parse(jsonString);
       events = parsedData.events || [];
     } catch (parseError) {
       console.error('Error parsing JSON response:', parseError);
       // Fallback to empty events array
     }
-
+    
     // Clean up - delete the assistant and thread when done
     await openai.beta.assistants.del(assistant.id);
-
+    
     return events.map(event => ({
       source: 'ai',
       title: event.title || 'Untitled Event',
       description: event.description || 'No description available',
       location: {
         name: event.location || event.location_name || 'Location TBD',
-        mapsLink: event.mapsLink || event.maps_link ||
+        mapsLink: event.mapsLink || event.maps_link || 
           `https://www.google.com/maps/search/${encodeURIComponent((event.location || event.location_name || city) + ', ' + city)}`
       },
       time: {
@@ -1496,7 +1562,7 @@ function generateFallbackEvents(city, count) {
     'Dance Party', 'Outdoor Activity', 'Shopping District', 'Craft Workshop',
     'Photography Tour', 'Wine Tasting', 'Street Performance', 'Local Festival'
   ];
-
+  
   for (let i = 0; i < Math.min(count, categories.length); i++) {
     fallbackEvents.push({
       source: 'fallback',
@@ -1514,7 +1580,7 @@ function generateFallbackEvents(city, count) {
       imageUrl: null
     });
   }
-
+  
   return fallbackEvents;
 }
 
@@ -1548,7 +1614,7 @@ function truncateDescription(description, maxLength) {
  */
 function generateMapsLink(location) {
   if (!location) return null;
-
+  
   let searchQuery;
   if (location.latitude && location.longitude) {
     return `https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`;
