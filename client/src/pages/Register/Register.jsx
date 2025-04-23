@@ -9,7 +9,7 @@ const Register = () => {
 
     // Redirects user if they are already logged in
     useEffect(() => {
-        if(access) navigate('/')
+        if (access) navigate('/')
     }, [access])
 
 
@@ -42,12 +42,13 @@ const Register = () => {
 
         console.log(response)
 
-        if(response.status == 200) {
+        if (response.status == 200) {
             localStorage.setItem('access', response.data.token)
             setAccess(response.data.token)
             navigate('/')
+
         }
-        if(response.status == 400 || response.status == 500) setError(response.response.data.error)
+        if (response.status == 400 || response.status == 500) setError(response.response.data.error)
     }
 
 

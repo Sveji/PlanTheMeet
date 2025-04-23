@@ -96,36 +96,46 @@ const Login = () => {
 
 
     return (
-        <form className="login-form"
-            onSubmit={(e) => handleSubmit(e)}>
-            {
-                error &&
-                <p className="error">{error}</p>
-            }
+        <section className="login-section">
+            <form className="login-form"
+                onSubmit={(e) => handleSubmit(e)}>
+                {
+                    error &&
+                    <p className="error">{error}</p>
+                }
 
-            <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
-                className="inputs"
-            />
-            <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                className="inputs"
-            />
-            <button type="submit" className="btn">Login</button>
+                <h1>Log in</h1>
+                <div className="input-box">
+                    <label htmlFor="">Email:</label>
+                    <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Email"
+                        className="inputs"
+                    />
+                </div>
+                <div className="input-box">
+                    <label htmlFor="">Password:</label>
+                    <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Password"
+                        className="inputs"
+                    />
+                </div>
 
-            <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH2}>
-                <GoogleLogin
-                    onSuccess={handleGoogleLoginSuccess}
-                    onError={handleGoogleLoginFailure}
-                />
-            </GoogleOAuthProvider>
-        </form>
+                <button type="submit" className="btn">Login</button>
+
+                <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH2}>
+                    <GoogleLogin
+                        onSuccess={handleGoogleLoginSuccess}
+                        onError={handleGoogleLoginFailure}
+                    />
+                </GoogleOAuthProvider>
+            </form>
+        </section>
     )
 }
 

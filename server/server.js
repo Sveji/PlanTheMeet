@@ -1273,8 +1273,11 @@ const apifyClient = new ApifyClient({
 
 app.get('/getRecommendations', async (req, res) => {
   try {
-    const date = req.query.date; // Format: YYYY-MM-DD
+    // const { date, city = 'Sofia, Bulgaria' } = req.body
+    const date = req.query.date; // ✅ FIXED
     const city = req.query.city || 'Sofia, Bulgaria';
+
+
 
     if (!date || !date.match(/^\d{4}-\d{2}-\d{2}$/)) {
       return res.status(400).json({ error: 'Invalid date format. Please use YYYY-MM-DD format.' });
