@@ -61,12 +61,12 @@ const MyCalendar = () => {
                 // url: '/getRecommendations',
                 url: `/getRecommendations?date=${formattedDate}`,
                 method: 'get',
-                params: {
-                    // date: formattedDate,
-                    // city: city
-                    date,
-                    city
-                }
+                // params: {
+                //     // date: formattedDate,
+                //     // city: city
+                //     date,
+                //     city
+                // }
             })
 
             console.log(response)

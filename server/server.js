@@ -1369,7 +1369,7 @@ app.get('/getRecommendations', async (req, res) => {
 
     // Step 3: Combine events and format response
     const combinedEvents = formatEvents([...apifyEvents, ...aiEvents]).slice(0, 30);
-
+    console.log(combinedEvents)
     res.json({
       date: formattedDate,
       city,
