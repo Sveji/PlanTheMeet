@@ -49,6 +49,7 @@ const MyCalendar = () => {
     const [city, setCity] = useState('Sofia, Bulgaria');
     const [recommendations, setRecommendations] = useState(null);
 
+////////////////////////////////////////////////////
 
     useEffect(() => {
         if (!selected) {
@@ -78,14 +79,14 @@ const MyCalendar = () => {
             if (response.status == 200) {
                 const ress = response.data
                 setRecommendations(ress.events)
-                console.log(ress)
+                console.log(recommendations)
             }
         }
 
         fetching()
     }, [selected])
 
-
+/////////////////////////////////////////////////////////
 
     return (
         <>

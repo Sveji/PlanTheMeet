@@ -72,7 +72,31 @@ const Month = ({ selected, setSelected, month = null, year = null }) => {
         if(month && year) getAllDates(year, month.index)
     }, [month, year])
 
+    useEffect(() => {
+            const fetching = async () => {
 
+            const response = await crud({
+                url: `/calendars`,
+                method: 'get',
+                header: {
+                    'Authorization': `Bearer ${localStorage.getItem('access')}`
+                },
+                params: {
+                    month,
+                    year
+                }
+            })
+
+            console.log(response)
+
+            if (response.status == 200) {
+                const ress = response.data
+                console.log(ress)
+            }
+        }
+
+        fetching()
+    }, [month, year])
 
     return (
         <div className="month">

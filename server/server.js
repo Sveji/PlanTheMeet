@@ -238,10 +238,11 @@ app.get('/', async (req, res) => {
 app.post('/auth/google/code-exchange', async (req, res) => {
   const { code } = req.body;
 
+  console.log(code)
   try {
     const { tokens } = await oauth2Client.getToken({
       code,
-      redirect_uri: 'http://localhost:5000/auth/google/code-exchange',
+      redirect_uri: 'http://localhost:3000',
     });
     oauth2Client.setCredentials(tokens);
 
@@ -398,23 +399,64 @@ app.post('/auth/google/token', async (req, res) => {
 // });
 
 
-app.get('/calendars', (req, res) => {
-  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+app.get('/calendars', authenticateJWT, async (req, res) => {
+  // const { year, month } = req.params;
+  const user = req.user
+  
+  const response = await User.findByPk(user.id)
+  const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-  calendar.calendarList.list({}, (err, result) => {
-    if (err) {
-      console.error('Error fetching calendar list', err);
-      return res.send('Error fetching calendars');
+  client.setCredentials({
+    access_token: response.accessToken,
+  });
+
+  const calendar = google.calendar({ version: 'v3', auth: client });
+
+  // const startDate = new Date(year, month - 1, 1);
+  // const endDate = new Date(year, month, 0);
+  // endDate.setHours(23, 59, 59, 999);
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+
+  const startDate = new Date(year, month, 1); // First day of month
+  const endDate = new Date(year, month + 1, 0); // Last day of month
+  endDate.setHours(23, 59, 59, 999);
+
+  const calendarListResponse = await calendar.calendarList.list();
+    const calendars = calendarListResponse.data.items;
+
+    if (!calendars || calendars.length === 0) {
+      return res.json([]);
     }
 
-    const calendars = result.data.items.map(cal => ({
-      id: cal.id,
-      summary: cal.summary,
-    }));
+    const allEvents = [];
 
-    res.json(calendars);
+    for (const cal of calendars) {
+      const eventsResponse = await calendar.events.list({
+        calendarId: cal.id,
+        timeMin: startDate.toISOString(),
+        timeMax: endDate.toISOString(),
+        singleEvents: true,
+        orderBy: 'startTime',
+      });
+
+      if (eventsResponse.data.items) {
+        allEvents.push(...eventsResponse.data.items.map(event => ({
+          calendarId: cal.id,
+          calendarSummary: cal.summary,
+          id: event.id,
+          summary: event.summary,
+          description: event.description,
+          start: event.start,
+          end: event.end,
+        })));
+      }
+    }
+
+    res.json(allEvents);
   });
-});
 
 app.get('/all-events', async (req, res) => {
   const calendar = google.calendar({ version: 'v3', auth: oauth2Client });

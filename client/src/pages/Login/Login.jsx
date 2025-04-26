@@ -155,12 +155,13 @@ const Login = () => {
 
             <button type="submit" className="btn">Login</button>
 
-            <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH2}>
+            {/* <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH2}>
                 <GoogleLogin
                     onSuccess={handleGoogleLoginSuccess}
                     onError={handleGoogleLoginFailure}
                 />
-            </GoogleOAuthProvider>
+            </GoogleOAuthProvider> */}
+            <button onClick={loginWithGoogle}>Login with Google</button>
         </form>
     )
 }
