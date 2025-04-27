@@ -73,29 +73,79 @@ const Month = ({ selected, setSelected, month = null, year = null }) => {
     }, [month, year])
 
     useEffect(() => {
-            const fetching = async () => {
+        //     const fetching = async () => {
 
+        //     const response = await crud({
+        //         url: `/calendars`,
+        //         method: 'get',
+        //         header: {
+        //             'Authorization': `Bearer ${localStorage.getItem('access')}`
+        //         },
+        //         params: {
+        //             month,
+        //             year
+        //         }
+        //     })
+
+        //     console.log(response)
+
+        //     if (response.status == 200) {
+        //         const ress = response.data
+        //         console.log(ress)
+        //     }
+        // }
+
+        // fetching()
+        const fetching = async () => {
             const response = await crud({
                 url: `/calendars`,
                 method: 'get',
-                header: {
+                headers: { // fix typo: header ➔ headers
                     'Authorization': `Bearer ${localStorage.getItem('access')}`
                 },
                 params: {
-                    month,
-                    year
+                    month: month.index,
+                    year: year
                 }
-            })
-
-            console.log(response)
-
-            if (response.status == 200) {
-                const ress = response.data
-                console.log(ress)
+            });
+    
+            console.log(response);
+    
+            if (response.status === 200) {
+                const googleEvents = response.data; // Assuming it's an array of events
+                console.log(googleEvents);
+    
+                setDates(prevDates => {
+                    if (!prevDates.length) return prevDates; // no dates yet
+    
+                    const newDates = prevDates.map(dateObj => {
+                        if (dateObj === null) return null; // skip empty slots
+    
+                        const day = dateObj.date.getUTCDate();
+                        const monthInDate = dateObj.date.getUTCMonth();
+                        const yearInDate = dateObj.date.getUTCFullYear();
+    
+                        const matchingEvents = googleEvents.filter(event => {
+                            const eventDate = new Date(event.start?.dateTime || event.start?.date);
+                            return (
+                                eventDate.getUTCDate() === day &&
+                                eventDate.getUTCMonth() === monthInDate &&
+                                eventDate.getUTCFullYear() === yearInDate
+                            );
+                        });
+    
+                        return {
+                            ...dateObj,
+                            events: [...dateObj.events, ...matchingEvents]
+                        };
+                    });
+    
+                    return newDates;
+                });
             }
-        }
-
-        fetching()
+        };
+    
+        if (month && year) fetching();
     }, [month, year])
 
     return (

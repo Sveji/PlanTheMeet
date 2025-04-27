@@ -447,7 +447,7 @@ app.get('/calendars', authenticateJWT, async (req, res) => {
           calendarId: cal.id,
           calendarSummary: cal.summary,
           id: event.id,
-          summary: event.summary,
+          title: event.summary,
           description: event.description,
           start: event.start,
           end: event.end,
@@ -1362,6 +1362,7 @@ app.use(cors({
 
 const { ApifyClient } = require('apify-client');
 const OpenAI = require('openai');
+const { title } = require('process');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
